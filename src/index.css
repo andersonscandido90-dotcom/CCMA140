@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@layer utilities {
+  /* Custom animations */
+  @keyframes drip {
+    0%, 100% { transform: translateY(0); opacity: 1; }
+    50% { transform: translateY(4px); opacity: 0.6; }
+  }
+
+  @keyframes waveMove {
+    0% { transform: translateX(-3px) rotate(0deg); }
+    50% { transform: translateX(3px) rotate(5deg); }
+    100% { transform: translateX(-3px) rotate(0deg); }
+  }
+
+  @keyframes snowfall {
+    0% { transform: translateY(-10px); opacity: 1; }
+    100% { transform: translateY(200px); opacity: 0; }
+  }
+
+  .animate-drip {
+    animation: drip 1.5s infinite ease-in-out;
+  }
+
+  .animate-wave-move {
+    animation: waveMove 2s infinite ease-in-out;
+  }
+
+  .snow-particle {
+    position: absolute;
+    top: -10px;
+    background-color: white;
+    border-radius: 50%;
+    animation: snowfall linear infinite;
+  }
+
+  .active-glow-green {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.35);
+  }
+
+  /* Custom scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.6);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(51, 65, 85, 0.8);
+    border-radius: 9999px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(71, 85, 105, 1);
+  }
+}
