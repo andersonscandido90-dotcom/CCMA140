@@ -162,12 +162,15 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange }) => {
     };
   }, [meanDraft, trim, data.draftForward, data.draftAft, hydrostaticTable]);
 
-  // === ATUALIZAR O GM ===
+  // === ATUALIZAR O GM E DESLOCAMENTO ===
   useEffect(() => {
     if (Math.abs(hydrostatics.gm - data.gm) > 0.001) {
       onChange('gm', hydrostatics.gm);
     }
-  }, [hydrostatics.gm, data.gm, onChange]);
+    if (Math.abs(hydrostatics.displacement - data.displacement) > 0.1) {
+      onChange('displacement', hydrostatics.displacement);
+    }
+  }, [hydrostatics.gm, hydrostatics.displacement, data.gm, data.displacement, onChange]);
 
   const displayDisplacement = hydrostatics.displacement;
 

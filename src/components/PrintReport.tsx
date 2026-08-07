@@ -7,11 +7,82 @@ interface Props {
   onClose?: () => void;
 }
 
+function calculateDisplacement(draftForward: number, draftAft: number): number {
+  const meanDraft = (draftForward + draftAft) / 2;
+  const trim = draftForward - draftAft;
+
+  if (meanDraft <= 0) return 21500;
+
+  const hydrostaticTable = [
+    { draft: 7.5, valores: [26118.811, 25580.9, 25086.6, 24634.0] },
+    { draft: 7.4, valores: [25670.582, 25137.0, 24646.4, 24197.7] },
+    { draft: 7.3, valores: [25224.438, 24695.1, 24208.2, 23763.6] },
+    { draft: 7.2, valores: [24780.4, 24255.1, 23772.0, 23331.6] },
+    { draft: 7.1, valores: [24338.3, 23817.1, 23337.8, 22901.8] },
+    { draft: 7.0, valores: [23898.2, 23380.9, 22905.7, 22474.2] },
+    { draft: 6.9, valores: [23460.1, 22946.7, 22475.8, 22048.7] },
+    { draft: 6.8, valores: [23024.0, 22514.5, 22048.0, 21625.5] },
+    { draft: 6.7, valores: [22589.9, 22084.4, 21622.4, 21204.4] },
+    { draft: 6.6, valores: [22157.7, 21656.3, 21198.9, 20785.5] },
+    { draft: 6.5, valores: [21727.4, 21230.5, 20777.6, 20368.8] },
+    { draft: 6.4, valores: [21299.1, 20806.8, 20358.4, 19954.3] },
+    { draft: 6.3, valores: [20873.0, 20385.2, 19941.4, 19542.2] },
+    { draft: 6.2, valores: [20449.1, 19965.9, 19526.5, 19132.4] },
+    { draft: 6.1, valores: [20027.3, 19548.6, 19113.8, 18725.1] },
+    { draft: 6.0, valores: [19607.7, 19133.5, 18703.2, 18320.3] },
+    { draft: 5.9, valores: [19190.4, 18720.6, 18294.9, 17918.4] },
+    { draft: 5.8, valores: [18775.2, 18309.8, 17888.9, 17519.4] },
+    { draft: 5.7, valores: [18362.2, 17901.3, 17485.2, 17123.4] },
+    { draft: 5.6, valores: [17951.5, 17494.9, 17084.0, 16730.4] },
+    { draft: 5.5, valores: [17542.9, 17090.8, 16685.3, 16340.4] },
+    { draft: 5.4, valores: [17136.6, 16689.0, 16289.3, 15953.3] },
+    { draft: 5.3, valores: [16732.5, 16289.5, 15896.1, 15569.2] },
+    { draft: 5.2, valores: [16330.7, 15892.4, 15506.0, 15188.1] },
+    { draft: 5.1, valores: [15931.2, 15497.8, 15119.1, 14809.8] },
+    { draft: 5.0, valores: [15534.0, 15105.7, 14735.3, 14434.4] },
+  ];
+
+  const trimAbs = Math.abs(trim);
+  let C_index = 0, K_index = 0;
+  if (trim < 0) {
+    if (trimAbs > 1.0) { C_index = 1; K_index = 0; }
+    else { C_index = 2; K_index = 1; }
+  } else {
+    if (trimAbs > 1.0) { C_index = 1; K_index = 3; }
+    else { C_index = 1; K_index = 2; }
+  }
+
+  const sortedTable = [...hydrostaticTable].sort((a, b) => a.draft - b.draft);
+  let lower = sortedTable[0];
+  let upper = sortedTable[sortedTable.length - 1];
+
+  for (let i = 0; i < sortedTable.length - 1; i++) {
+    if (sortedTable[i].draft <= meanDraft && sortedTable[i + 1].draft >= meanDraft) {
+      lower = sortedTable[i];
+      upper = sortedTable[i + 1];
+      break;
+    }
+  }
+
+  const factor = lower.draft === upper.draft ? 0 : (meanDraft - lower.draft) / (upper.draft - lower.draft);
+  const C = lower.valores[C_index] + (upper.valores[C_index] - lower.valores[C_index]) * factor;
+  const K = lower.valores[K_index] + (upper.valores[K_index] - lower.valores[K_index]) * factor;
+  const T = C - K;
+  const S = T * trim;
+  const displacement = C + S;
+  return Math.max(0, Math.round(displacement * 10) / 10);
+}
+
 export default function PrintReport({ report, onClose }: Props) {
   const printSheetRef = useRef<HTMLDivElement>(null);
 
   const [year, month, day] = (report.date || new Date().toISOString().split('T')[0]).split('-');
   const formattedDate = `${day}/${month}/${year}`;
+
+  const currentDisplacement = calculateDisplacement(report.stability.draftForward, report.stability.draftAft);
+  const displayDisplacement = (report.stability.displacement && report.stability.displacement !== 21500) 
+    ? report.stability.displacement 
+    : currentDisplacement;
 
   const triggerPrint = () => {
     try {
@@ -172,7 +243,7 @@ export default function PrintReport({ report, onClose }: Props) {
                 <span className="font-bold">{report.stability.draftAft} m</span>
               </div>
               <div>
-                <span className="text-gray-500 block text-[8px] font-bold uppercase">Banda (Heel)</span>
+                <span className="text-gray-500 block text-[8px] font-bold uppercase">Banda</span>
                 <span className="font-bold">{report.stability.heel}°</span>
               </div>
               <div>
@@ -181,7 +252,7 @@ export default function PrintReport({ report, onClose }: Props) {
               </div>
               <div className="col-span-2 border-t border-gray-100 pt-1 mt-0.5">
                 <span className="text-gray-500 block text-[8px] font-bold uppercase">Deslocamento</span>
-                <span className="font-bold">{report.stability.displacement} Ton</span>
+                <span className="font-bold">{displayDisplacement.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} Ton</span>
               </div>
             </div>
           </div>
@@ -272,8 +343,8 @@ export default function PrintReport({ report, onClose }: Props) {
         )}
         </div>
 
-        {/* Signatures pushed to footer */}
-        <div className="mt-auto pt-6 border-t-2 border-black grid grid-cols-3 gap-6 text-center text-[10px] uppercase font-black">
+        {/* Signatures pushed to footer without top divider line */}
+        <div className="mt-auto pt-10 grid grid-cols-3 gap-6 text-center text-[10px] uppercase font-black">
           <div>
             <div className="border-b-2 border-black mb-2 w-4/5 mx-auto"></div>
             <span>SUPERVISOR DO CCM</span>
