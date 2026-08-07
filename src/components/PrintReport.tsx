@@ -181,7 +181,7 @@ export default function PrintReport({ report, onClose }: Props) {
               </div>
               <div>
                 <h1 className="font-black text-base sm:text-lg uppercase tracking-wider leading-tight">{SHIP_CONFIG.name} {SHIP_CONFIG.hullNumber}</h1>
-                <h2 className="text-[10px] font-bold uppercase tracking-widest text-gray-700">{SHIP_CONFIG.designation} — MARINHA DO BRASIL</h2>
+                <h2 className="text-[11px] font-black uppercase tracking-widest text-black">MARINHA DO BRASIL</h2>
               </div>
             </div>
             <div className="text-right">
@@ -305,12 +305,12 @@ export default function PrintReport({ report, onClose }: Props) {
           </div>
         </div>
 
-        {/* 3. Escala do Quarto de Serviço */}
+        {/* 3. Escala do Quarto / Tabela de Serviço */}
         <div className="border border-gray-300 rounded-md p-2.5 mb-3">
           <h3 className="font-black text-[10px] uppercase text-blue-900 border-b border-gray-200 pb-1 mb-1.5">
-            4. Divisão de Serviço do CCM
+            4. Tabela de Serviço do CCM
           </h3>
-          <div className="grid grid-cols-4 gap-2 text-[10px] font-mono leading-tight">
+          <div className="grid grid-cols-4 gap-2 text-[10px] font-mono leading-tight mb-2 pb-1.5 border-b border-gray-100">
             <div>
               <span className="text-gray-500 text-[8px] block font-bold uppercase">Supervisor MO</span>
               <span className="font-bold">{report.personnel?.supervisorMO || '-'}</span>
@@ -326,6 +326,31 @@ export default function PrintReport({ report, onClose }: Props) {
             <div>
               <span className="text-gray-500 text-[8px] block font-bold uppercase">Encarregado Máquinas</span>
               <span className="font-bold">{report.personnel?.encarregadoMaquinas || '-'}</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 text-[9px] font-mono leading-tight">
+            <div>
+              <span className="text-blue-900 font-bold text-[8px] uppercase block mb-1">Auxiliares de Serviço</span>
+              <div className="grid grid-cols-3 gap-1">
+                {["08-12h", "12-16h", "16-20h"].map((shift, i) => (
+                  <div key={i} className="bg-gray-50 p-1 rounded border border-gray-200">
+                    <span className="text-gray-500 text-[7.5px] block font-bold uppercase">{shift}</span>
+                    <span className="font-bold text-[8.5px] block truncate">{report.personnel?.auxiliares?.[i] || '-'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <span className="text-blue-900 font-bold text-[8px] uppercase block mb-1">Patrulhas de Serviço</span>
+              <div className="grid grid-cols-3 gap-1">
+                {["08-12h", "12-16h", "16-20h"].map((shift, i) => (
+                  <div key={i} className="bg-gray-50 p-1 rounded border border-gray-200">
+                    <span className="text-gray-500 text-[7.5px] block font-bold uppercase">{shift}</span>
+                    <span className="font-bold text-[8.5px] block truncate">{report.personnel?.patrulha?.[i] || '-'}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

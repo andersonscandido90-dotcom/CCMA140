@@ -315,7 +315,7 @@ const App: React.FC = () => {
     { id: 'stability', icon: <Compass size={18} />, label: 'Estabilidade' },
     { id: 'cav', icon: <ShieldAlert size={18} />, label: 'CAV' },
     { id: 'isis', icon: <Monitor size={18} />, label: 'ISIS' },
-    { id: 'personnel', icon: <Users size={18} />, label: 'Quarto de Serviço' }
+    { id: 'personnel', icon: <Users size={18} />, label: 'Tabela de Serviço' }
   ], []);
 
   // Handler de anotações do serviço (precisa estar definido antes de qualquer uso)
