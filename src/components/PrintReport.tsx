@@ -82,31 +82,42 @@ export default function PrintReport({ report, onClose }: Props) {
         </div>
       </div>
 
-      {/* Sheet Content (Styled for compact 1-page print) */}
+      {/* Sheet Content (Styled for compact 1-page print with signatures at bottom) */}
       <div 
         ref={printSheetRef}
         id="print-report-sheet"
-        className="print-container max-w-4xl mx-auto bg-white text-black p-6 sm:p-8 rounded-2xl shadow-2xl print:p-0 print:shadow-none print:max-w-none print:w-full print:bg-white print:text-black"
+        className="print-container max-w-4xl mx-auto bg-white text-black p-6 sm:p-8 rounded-2xl shadow-2xl print:p-0 print:shadow-none print:max-w-none print:w-full print:bg-white print:text-black flex flex-col justify-between min-h-[260mm] sm:min-h-[275mm]"
       >
-        {/* Navy Header */}
-        <div className="border-b-2 border-black pb-2 mb-3 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            {/* Embed vector Navy Anchor Badge to guarantee 100% reliability with no CORS or external image load failure */}
-            <div className="w-10 h-10 rounded-full bg-blue-950 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500 shadow-sm print:bg-transparent print:text-blue-950 print:border-blue-950">
-              <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
-                <path d="M12 2a2 2 0 0 1 2 2v2.07A6 6 0 0 1 19.93 11H22v2h-2.07A8.002 8.002 0 0 1 13 19.93V22h-2v-2.07A8.002 8.002 0 0 1 4.07 13H2v-2h2.07A6 6 0 0 1 10 6.07V4a2 2 0 0 1 2-2zm0 6a4 4 0 0 0-3.995 3.8L8 12a4 4 0 0 0 8 0 4 4 0 0 0-4-4zm0 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/>
-              </svg>
+        <div>
+          {/* Navy Header */}
+          <div className="border-b-2 border-black pb-2 mb-3 flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              {/* Ship Badge / Crest */}
+              <img 
+                src={SHIP_CONFIG.badgeUrl} 
+                alt="Brasão do Navio" 
+                className="w-12 h-12 object-contain shrink-0" 
+                onError={(e) => { 
+                  e.currentTarget.style.display = 'none';
+                  const fallback = document.getElementById('ship-badge-fallback');
+                  if (fallback) fallback.style.display = 'flex';
+                }}
+              />
+              <div id="ship-badge-fallback" className="hidden w-11 h-11 rounded-full bg-blue-950 text-amber-400 items-center justify-center shrink-0 border border-amber-500 shadow-sm print:bg-transparent print:text-blue-950 print:border-blue-950">
+                <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                  <path d="M12 2a2 2 0 0 1 2 2v2.07A6 6 0 0 1 19.93 11H22v2h-2.07A8.002 8.002 0 0 1 13 19.93V22h-2v-2.07A8.002 8.002 0 0 1 4.07 13H2v-2h2.07A6 6 0 0 1 10 6.07V4a2 2 0 0 1 2-2zm0 6a4 4 0 0 0-3.995 3.8L8 12a4 4 0 0 0 8 0 4 4 0 0 0-4-4zm0 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/>
+                </svg>
+              </div>
+              <div>
+                <h1 className="font-black text-base sm:text-lg uppercase tracking-wider leading-tight">{SHIP_CONFIG.name} {SHIP_CONFIG.hullNumber}</h1>
+                <h2 className="text-[10px] font-bold uppercase tracking-widest text-gray-700">{SHIP_CONFIG.designation} — MARINHA DO BRASIL</h2>
+              </div>
             </div>
-            <div>
-              <h1 className="font-black text-base sm:text-lg uppercase tracking-wider leading-tight">{SHIP_CONFIG.name} {SHIP_CONFIG.hullNumber}</h1>
-              <h2 className="text-[10px] font-bold uppercase tracking-widest text-gray-700">{SHIP_CONFIG.designation} — MARINHA DO BRASIL</h2>
+            <div className="text-right">
+              <span className="text-[9px] font-black uppercase block text-gray-500">Data de Emissão</span>
+              <span className="text-sm font-black text-blue-900 block">{formattedDate}</span>
             </div>
           </div>
-          <div className="text-right">
-            <span className="text-[9px] font-black uppercase block text-gray-500">Data de Emissão</span>
-            <span className="text-sm font-black text-blue-900 block">{formattedDate}</span>
-          </div>
-        </div>
 
         {/* 1. Quadros de Cargas e Estabilidade */}
         <div className="grid grid-cols-2 gap-3 mb-3">
@@ -259,19 +270,20 @@ export default function PrintReport({ report, onClose }: Props) {
             </p>
           </div>
         )}
+        </div>
 
-        {/* Signatures */}
-        <div className="mt-6 pt-4 border-t border-gray-300 grid grid-cols-3 gap-4 text-center text-[9px] uppercase font-bold">
+        {/* Signatures pushed to footer */}
+        <div className="mt-auto pt-6 border-t-2 border-black grid grid-cols-3 gap-6 text-center text-[10px] uppercase font-black">
           <div>
-            <div className="border-b border-black mb-1 w-4/5 mx-auto"></div>
+            <div className="border-b-2 border-black mb-2 w-4/5 mx-auto"></div>
             <span>SUPERVISOR DO CCM</span>
           </div>
           <div>
-            <div className="border-b border-black mb-1 w-4/5 mx-auto"></div>
+            <div className="border-b-2 border-black mb-2 w-4/5 mx-auto"></div>
             <span>OFICIAL DE SERVIÇO QUE PASSA</span>
           </div>
           <div>
-            <div className="border-b border-black mb-1 w-4/5 mx-auto"></div>
+            <div className="border-b-2 border-black mb-2 w-4/5 mx-auto"></div>
             <span>OFICIAL DE SERVIÇO QUE ENTRA</span>
           </div>
         </div>
