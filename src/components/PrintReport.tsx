@@ -1,8 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import { DailyReport, EquipmentStatus } from '../types';
 import { CATEGORIES, SHIP_CONFIG, STATUS_CONFIG } from '../constants';
-// @ts-ignore
-import html2pdf from 'html2pdf.js';
 
 interface Props {
   report: DailyReport;
@@ -10,7 +8,6 @@ interface Props {
 }
 
 export default function PrintReport({ report, onClose }: Props) {
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const printSheetRef = useRef<HTMLDivElement>(null);
 
   const [year, month, day] = (report.date || new Date().toISOString().split('T')[0]).split('-');
@@ -20,38 +17,8 @@ export default function PrintReport({ report, onClose }: Props) {
     try {
       window.print();
     } catch (e) {
-      alert('A impressão pelo navegador não foi suportada no iFrame. Por favor, utilize o botão "Baixar Arquivo PDF".');
-    }
-  };
-
-  const downloadPdfFile = () => {
-    if (!printSheetRef.current) return;
-    setIsGeneratingPdf(true);
-
-    const element = printSheetRef.current;
-    const opt = {
-      margin: 6,
-      filename: `Relatorio_NAM_Atlantico_${formattedDate.replace(/\//g, '-')}.pdf`,
-      image: { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
-      jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
-    };
-
-    try {
-      html2pdf()
-        .set(opt)
-        .from(element)
-        .save()
-        .then(() => setIsGeneratingPdf(false))
-        .catch((err: any) => {
-          console.error('Error generating PDF:', err);
-          setIsGeneratingPdf(false);
-          triggerPrint();
-        });
-    } catch (err) {
-      console.error(err);
-      setIsGeneratingPdf(false);
-      triggerPrint();
+      console.error(e);
+      alert('Utilize o atalho Ctrl+P para abrir a janela de impressão do seu navegador.');
     }
   };
 
@@ -87,33 +54,30 @@ export default function PrintReport({ report, onClose }: Props) {
 
       {/* Controls (Hidden during print) */}
       <div className="max-w-5xl mx-auto mb-4 flex flex-col sm:flex-row justify-between items-center gap-3 bg-slate-950 p-4 rounded-2xl border border-slate-800 no-print">
-        <div className="flex items-center gap-3">
-          <span className="font-black text-white uppercase text-xs sm:text-sm">Modo de Impressão Oficial A4</span>
-          <span className="text-[10px] sm:text-xs text-slate-400 font-medium">(Otimizado para 1 página)</span>
+        <div>
+          <div className="flex items-center gap-3">
+            <span className="font-black text-white uppercase text-xs sm:text-sm">Modo de Impressão Oficial A4</span>
+            <span className="text-[10px] sm:text-xs text-slate-400 font-medium">(Otimizado para 1 página)</span>
+          </div>
+          <p className="text-[11px] text-slate-400 mt-1">
+            💡 <strong className="text-slate-200">Para salvar em PDF:</strong> Ao clicar no botão, selecione <span className="text-blue-400 font-semibold">"Salvar como PDF"</span> no destino da impressora.
+          </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
           {onClose && (
             <button 
               onClick={onClose}
-              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white font-black text-xs uppercase rounded-xl transition-all"
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-black text-xs uppercase rounded-xl transition-all"
             >
               Voltar
             </button>
           )}
-          
-          <button 
-            onClick={downloadPdfFile}
-            disabled={isGeneratingPdf}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase rounded-xl shadow-lg flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
-          >
-            {isGeneratingPdf ? '⏳ Gerando PDF...' : '📄 Baixar Arquivo PDF'}
-          </button>
 
           <button 
             onClick={triggerPrint}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase rounded-xl shadow-lg flex items-center gap-2 transition-all active:scale-95"
+            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase rounded-xl shadow-lg flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
           >
-            🖨️ Chamar Impressora
+            🖨️ Imprimir / Salvar em PDF
           </button>
         </div>
       </div>
@@ -127,13 +91,12 @@ export default function PrintReport({ report, onClose }: Props) {
         {/* Navy Header */}
         <div className="border-b-2 border-black pb-2 mb-3 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <img 
-              src={SHIP_CONFIG.badgeUrl} 
-              alt="Logo Navio" 
-              className="w-12 h-12 object-contain" 
-              crossOrigin="anonymous"
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-            />
+            {/* Embed vector Navy Anchor Badge to guarantee 100% reliability with no CORS or external image load failure */}
+            <div className="w-10 h-10 rounded-full bg-blue-950 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500 shadow-sm print:bg-transparent print:text-blue-950 print:border-blue-950">
+              <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                <path d="M12 2a2 2 0 0 1 2 2v2.07A6 6 0 0 1 19.93 11H22v2h-2.07A8.002 8.002 0 0 1 13 19.93V22h-2v-2.07A8.002 8.002 0 0 1 4.07 13H2v-2h2.07A6 6 0 0 1 10 6.07V4a2 2 0 0 1 2-2zm0 6a4 4 0 0 0-3.995 3.8L8 12a4 4 0 0 0 8 0 4 4 0 0 0-4-4zm0 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/>
+              </svg>
+            </div>
             <div>
               <h1 className="font-black text-base sm:text-lg uppercase tracking-wider leading-tight">{SHIP_CONFIG.name} {SHIP_CONFIG.hullNumber}</h1>
               <h2 className="text-[10px] font-bold uppercase tracking-widest text-gray-700">{SHIP_CONFIG.designation} — MARINHA DO BRASIL</h2>

@@ -19,8 +19,7 @@ import {
   Download,
   Upload,
   Printer,
-  Database,
-  FileCheck
+  Database
 } from 'lucide-react';
 import { EquipmentStatus, DailyReport, FuelData, EquipmentData, StabilityData, PersonnelData, LogEntry } from './types';
 import { CATEGORIES, SHIP_CONFIG } from './constants';
@@ -32,7 +31,6 @@ import ActivityLog from './components/ActivityLog';
 import CAVPanel from './components/CAVPanel';
 import RestrictionsPanel from './components/RestrictionsPanel';
 import IsisPanel from './components/IsisPanel';
-import HandoverPanel from './components/HandoverPanel';
 import PrintReport from './components/PrintReport';
 import BackupManagerModal from './components/BackupManagerModal';
 
@@ -300,7 +298,7 @@ const App: React.FC = () => {
   const [logs, setLogs] = useState<LogEntry[]>(initialReport.logs);
   const [serviceNotes, setServiceNotes] = useState<string>(initialReport.serviceNotes || '');
   const [currentTheme, setCurrentTheme] = useState<string>(localStorage.getItem('app_theme') || 'bg-slate-950');
-  const [view, setView] = useState<'menu-inicial' | 'equipment' | 'fuel' | 'stability' | 'personnel' | 'tv-mode' | 'cav' | 'restrictions' | 'isis' | 'handover'>('menu-inicial');
+  const [view, setView] = useState<'menu-inicial' | 'equipment' | 'fuel' | 'stability' | 'personnel' | 'tv-mode' | 'cav' | 'restrictions' | 'isis'>('menu-inicial');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentTvSlide, setCurrentTvSlide] = useState(0);
   const [customLogo, setCustomLogo] = useState<string | null>(localStorage.getItem('custom_ship_logo'));
@@ -317,8 +315,7 @@ const App: React.FC = () => {
     { id: 'stability', icon: <Compass size={18} />, label: 'Estabilidade' },
     { id: 'cav', icon: <ShieldAlert size={18} />, label: 'CAV' },
     { id: 'isis', icon: <Monitor size={18} />, label: 'ISIS' },
-    { id: 'personnel', icon: <Users size={18} />, label: 'Quarto de Serviço' },
-    { id: 'handover', icon: <FileCheck size={18} />, label: 'Passagem de Quarto' }
+    { id: 'personnel', icon: <Users size={18} />, label: 'Quarto de Serviço' }
   ], []);
 
   // Handler de anotações do serviço (precisa estar definido antes de qualquer uso)
@@ -463,22 +460,6 @@ const App: React.FC = () => {
   const handleThemeChange = (themeId: string) => {
     setCurrentTheme(themeId);
     localStorage.setItem('app_theme', themeId);
-  };
-
-  const handleConfirmHandover = (outgoing: string, incoming: string, handoverNotes: string) => {
-    const handoverLog: LogEntry = {
-      id: Math.random().toString(36).substr(2, 9),
-      item: 'PASSAGEM DE QUARTO DE SERVIÇO',
-      timestamp: new Date().toISOString(),
-      oldStatus: EquipmentStatus.AVAILABLE,
-      newStatus: EquipmentStatus.IN_SERVICE,
-      user: `${outgoing} ➔ ${incoming}${handoverNotes ? ` (${handoverNotes})` : ''}`
-    };
-    const updatedPersonnel = { ...personnelData, supervisorMO: incoming };
-    saveData({
-      personnel: updatedPersonnel,
-      logs: [...logs, handoverLog]
-    });
   };
 
   const handleViewChange = (newView: any) => {
@@ -745,19 +726,6 @@ const App: React.FC = () => {
           {view === 'restrictions' && <RestrictionsPanel data={equipmentData} reasons={restrictionReasons} onReasonChange={handleReasonChange} />}
           {view === 'isis' && <IsisPanel overrides={isisOverrides} onOverrideChange={handleIsisOverride} />}
           {view === 'personnel' && <PersonnelView data={personnelData} onChange={(k, v) => saveData({ personnel: { ...personnelData, [k as keyof PersonnelData]: v } })} serviceNotes={serviceNotes} onServiceNotesChange={handleServiceNotesChange} />}
-          {view === 'handover' && (
-            <HandoverPanel 
-              equipmentData={equipmentData} 
-              fuelData={fuelData} 
-              stabilityData={stabilityData} 
-              personnelData={personnelData} 
-              restrictionReasons={restrictionReasons} 
-              eductorStatuses={eductorStatuses} 
-              serviceNotes={serviceNotes} 
-              selectedDate={selectedDate} 
-              onConfirmHandover={handleConfirmHandover} 
-            />
-          )}
         </div>
       </main>
 
