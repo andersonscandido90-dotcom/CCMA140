@@ -45,38 +45,38 @@ interface Props {
 
 const CAVPanel: React.FC<Props> = ({ eductorStatuses, onStatusToggle, readOnly }) => {
   return (
-    <div className="bg-slate-900/80 border border-slate-800 shadow-2xl rounded-[1.5rem] sm:rounded-[3rem] p-6 lg:p-12 backdrop-blur-md relative animate-in fade-in duration-500">
+    <div className="bg-slate-900/80 border border-slate-800 shadow-2xl rounded-[1.5rem] sm:rounded-[3rem] p-3.5 sm:p-8 lg:p-12 backdrop-blur-md relative animate-in fade-in duration-500">
       {readOnly && <div className="absolute top-4 right-10 flex items-center gap-2 text-[9px] font-black text-slate-500 uppercase bg-slate-950 px-3 py-1 rounded-full border border-slate-800 z-10"><Lock size={10} /> Consulta</div>}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-10 border-b border-slate-800/60 pb-8">
-        <div className="flex items-center gap-5">
-          <div className="p-4 bg-red-600 rounded-2xl shadow-xl shadow-red-900/20">
-            <ShieldAlert className="w-10 h-10 text-white" />
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-6 sm:mb-10 border-b border-slate-800/60 pb-4 sm:pb-8">
+        <div className="flex items-center gap-3 sm:gap-5">
+          <div className="p-3 sm:p-4 bg-red-600 rounded-2xl shadow-xl shadow-red-900/20 shrink-0">
+            <ShieldAlert className="w-7 h-7 sm:w-10 sm:h-10 text-white" />
           </div>
           <div>
-            <h3 className="font-black text-white uppercase text-2xl lg:text-5xl tracking-tighter">Controle de Avarias (CAV)</h3>
-            <p className="text-slate-500 font-bold uppercase text-[10px] lg:text-sm tracking-widest mt-1">Esgoto por Arrastamento (Edutores)</p>
+            <h3 className="font-black text-white uppercase text-xl sm:text-3xl lg:text-5xl tracking-tighter">Controle de Avarias (CAV)</h3>
+            <p className="text-slate-500 font-bold uppercase text-[9px] sm:text-xs lg:text-sm tracking-widest mt-0.5 sm:mt-1">Esgoto por Arrastamento (Edutores)</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-8 lg:gap-10">
         {SECTIONS.map((item) => (
           <div 
             key={item.section}
-            className={`relative p-8 lg:p-10 rounded-[2.5rem] border-2 transition-all duration-300 group ${
+            className={`relative p-4 sm:p-8 lg:p-10 rounded-2xl sm:rounded-[2.5rem] border-2 transition-all duration-300 group ${
               item.eductors.length > 0 
                 ? 'bg-slate-950 border-slate-800 hover:border-blue-500/40' 
                 : 'bg-slate-900/40 border-slate-800'
             }`}
           >
-            <div className="flex justify-between items-start mb-10">
+            <div className="flex justify-between items-start mb-4 sm:mb-10">
               <div className="flex flex-col">
-                <span className="text-7xl lg:text-9xl font-black text-white leading-none tracking-tighter">
+                <span className="text-5xl sm:text-7xl lg:text-9xl font-black text-white leading-none tracking-tighter">
                   {item.section}
                 </span>
-                <span className="text-[14px] font-black text-slate-500 uppercase tracking-[0.3em] mt-2">SEÇÃO</span>
+                <span className="text-[11px] sm:text-[14px] font-black text-slate-500 uppercase tracking-[0.2em] sm:tracking-[0.3em] mt-1 sm:mt-2">SEÇÃO</span>
               </div>
-              {item.eductors.length > 0 && <SewageValveIcon className="text-blue-500" size={48} />}
+              {item.eductors.length > 0 && <SewageValveIcon className="text-blue-500 sm:w-[48px] sm:h-[48px]" size={36} />}
             </div>
 
             <div className="space-y-4">

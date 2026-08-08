@@ -188,27 +188,27 @@ export default function BackupManagerModal({ currentDate, onSelectDate, onClose 
                   return (
                     <div 
                       key={date}
-                      className={`p-4 rounded-2xl border flex items-center justify-between gap-4 transition-all ${
+                      className={`p-3.5 sm:p-4 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all ${
                         isCurrent 
                           ? 'bg-blue-950/40 border-blue-500/50' 
                           : 'bg-slate-950 border-slate-800 hover:border-slate-700'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`p-2.5 rounded-xl text-xs font-black uppercase ${
+                        <div className={`p-2 sm:p-2.5 rounded-xl text-[11px] sm:text-xs font-black uppercase shrink-0 ${
                           isCurrent ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300'
                         }`}>
                           {date}
                         </div>
-                        <div>
-                          <span className="text-xs font-bold text-white block uppercase">{supervisor}</span>
-                          <span className="text-[10px] font-mono text-slate-500">
+                        <div className="min-w-0">
+                          <span className="text-xs font-bold text-white block uppercase truncate">{supervisor}</span>
+                          <span className="text-[10px] font-mono text-slate-500 block truncate">
                             Cargas: H2O {report.fuel?.water || 0}m³ | Comb. {report.fuel?.fuelOil || 0}m³
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
                         {!isCurrent && (
                           <button
                             onClick={() => {

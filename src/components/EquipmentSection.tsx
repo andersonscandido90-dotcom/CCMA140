@@ -136,10 +136,10 @@ const EquipmentSection: React.FC<Props> = ({ categories, data, onStatusChange })
   const getNameSizeClass = (name: string) => {
     const len = name.length;
     // Mobile first sizing
-    if (len <= 5) return 'text-2xl xs:text-3xl sm:text-5xl lg:text-7xl';
-    if (len <= 10) return 'text-lg xs:text-xl sm:text-4xl lg:text-5xl';
-    if (len <= 18) return 'text-base xs:text-lg sm:text-3xl lg:text-4xl';
-    return 'text-sm xs:text-base sm:text-2xl lg:text-3xl';
+    if (len <= 5) return 'text-xl xs:text-2xl sm:text-5xl lg:text-7xl';
+    if (len <= 10) return 'text-base xs:text-xl sm:text-3xl lg:text-5xl';
+    if (len <= 18) return 'text-sm xs:text-lg sm:text-2xl lg:text-4xl';
+    return 'text-xs xs:text-sm sm:text-xl lg:text-3xl';
   };
 
   return (

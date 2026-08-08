@@ -37,16 +37,16 @@ const FuelPanel: React.FC<Props> = ({ fuel, onChange, fullWidth }) => {
   };
 
   return (
-    <div className={`bg-slate-900/40 border border-slate-800 shadow-2xl rounded-[1.5rem] sm:rounded-[3rem] lg:rounded-[4rem] p-5 sm:p-8 lg:p-12 backdrop-blur-xl ${fullWidth ? 'w-full' : ''}`}>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 sm:mb-12 gap-6">
-        <h3 className={`font-black flex items-center gap-4 sm:gap-6 text-white uppercase tracking-tighter ${fullWidth ? 'text-2xl sm:text-4xl lg:text-7xl' : 'text-xl sm:text-2xl lg:text-4xl'}`}>
-          <div className="p-3 sm:p-4 bg-blue-600 rounded-2xl sm:rounded-3xl shadow-lg shadow-blue-600/20 shrink-0">
-            <Droplet className="text-white w-6 h-6 sm:w-8 sm:h-8 lg:w-12 lg:h-12" />
+    <div className={`bg-slate-900/40 border border-slate-800 shadow-2xl rounded-[1.5rem] sm:rounded-[3rem] lg:rounded-[4rem] p-3.5 sm:p-8 lg:p-12 backdrop-blur-xl ${fullWidth ? 'w-full' : ''}`}>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 sm:mb-12 gap-4 sm:gap-6">
+        <h3 className={`font-black flex items-center gap-3 sm:gap-6 text-white uppercase tracking-tighter ${fullWidth ? 'text-xl sm:text-4xl lg:text-7xl' : 'text-lg sm:text-2xl lg:text-4xl'}`}>
+          <div className="p-2.5 sm:p-4 bg-blue-600 rounded-2xl sm:rounded-3xl shadow-lg shadow-blue-600/20 shrink-0">
+            <Droplet className="text-white w-5 h-5 sm:w-8 sm:h-8 lg:w-12 lg:h-12" />
           </div>
           Cargas Líquidas
         </h3>
         {fullWidth && (
-          <div className="bg-slate-950/80 border border-slate-800 px-4 py-2 sm:px-8 sm:py-4 rounded-xl sm:rounded-[2rem] flex flex-row sm:flex-col items-center sm:items-end gap-3 sm:gap-1 shadow-inner w-full sm:w-auto justify-between">
+          <div className="bg-slate-950/80 border border-slate-800 px-3 py-2 sm:px-8 sm:py-4 rounded-xl sm:rounded-[2rem] flex flex-row sm:flex-col items-center sm:items-end gap-3 sm:gap-1 shadow-inner w-full sm:w-auto justify-between">
             <span className="font-black text-slate-500 uppercase tracking-widest text-[8px] lg:text-xs">Volume Total</span>
             <div className="flex items-baseline gap-2">
               <span className="font-black text-blue-400 text-xl sm:text-3xl lg:text-5xl tracking-tighter">
@@ -58,7 +58,7 @@ const FuelPanel: React.FC<Props> = ({ fuel, onChange, fullWidth }) => {
         )}
       </div>
       
-      <div className={`grid gap-4 sm:gap-8 lg:gap-12 ${fullWidth ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+      <div className={`grid gap-3 sm:gap-8 lg:gap-12 ${fullWidth ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
         {items.map((item) => {
           const maxValue = fuel[item.maxKey] || 1;
           const currentVal = fuel[item.key];
@@ -67,7 +67,7 @@ const FuelPanel: React.FC<Props> = ({ fuel, onChange, fullWidth }) => {
           const isFull = currentVal >= maxValue;
           
           return (
-            <div key={item.key} className={`bg-slate-950/60 border-2 rounded-[1.5rem] sm:rounded-[2.5rem] p-5 sm:p-8 lg:p-10 flex flex-col gap-6 sm:gap-8 group transition-all duration-500 relative overflow-hidden ${isFull ? 'border-blue-500/50' : 'border-slate-800/50 hover:border-blue-500/30'}`}>
+            <div key={item.key} className={`bg-slate-950/60 border-2 rounded-[1.5rem] sm:rounded-[2.5rem] p-3.5 sm:p-8 lg:p-10 flex flex-col gap-4 sm:gap-8 group transition-all duration-500 relative overflow-hidden ${isFull ? 'border-blue-500/50' : 'border-slate-800/50 hover:border-blue-500/30'}`}>
               <div className="absolute -right-4 -top-4 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity pointer-events-none hidden sm:block">
                 <Icon size={200} />
               </div>

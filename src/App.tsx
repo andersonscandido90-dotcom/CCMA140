@@ -627,64 +627,70 @@ const App: React.FC = () => {
       </aside>
 
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="px-6 py-4 sm:px-8 sm:py-6 border-b border-slate-800/50 flex items-center justify-between bg-slate-950/40 backdrop-blur-md gap-4 print:hidden">
-          <div className="flex items-center gap-4">
+        <header className="px-3 py-2.5 sm:px-8 sm:py-6 border-b border-slate-800/50 flex flex-wrap sm:flex-nowrap items-center justify-between bg-slate-950/40 backdrop-blur-md gap-2 sm:gap-4 print:hidden">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <button 
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-3 bg-slate-900 border border-slate-800 rounded-xl text-blue-500 shadow-lg active:scale-95 transition-all"
+              className="lg:hidden p-2 sm:p-3 bg-slate-900 border border-slate-800 rounded-xl text-blue-500 shadow-lg active:scale-95 transition-all shrink-0"
+              aria-label="Abrir menu"
             >
-              <Menu size={24} />
+              <Menu size={20} className="sm:w-6 sm:h-6" />
             </button>
-            <h2 className="text-lg sm:text-2xl font-black uppercase text-white truncate">{currentViewLabel}</h2>
+            <h2 className="text-sm sm:text-2xl font-black uppercase text-white truncate">{currentViewLabel}</h2>
           </div>
           
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
-            <div className="bg-slate-900 px-3 py-2 sm:px-4 sm:py-2 rounded-xl flex items-center gap-2 sm:gap-3 border border-slate-800 shadow-inner">
-              <Calendar size={14} className="text-blue-500 shrink-0" />
+          <div className="flex items-center gap-1.5 sm:gap-3 flex-wrap justify-end shrink-0">
+            <div className="bg-slate-900 px-2 py-1.5 sm:px-4 sm:py-2 rounded-xl flex items-center gap-1.5 sm:gap-3 border border-slate-800 shadow-inner">
+              <Calendar size={12} className="text-blue-500 shrink-0 sm:w-3.5 sm:h-3.5" />
               <input 
                 type="date" 
                 value={selectedDate} 
                 onChange={e => updateSelectedDate(e.target.value)} 
-                className="bg-transparent font-black text-white text-[10px] sm:text-xs outline-none w-[100px] sm:w-auto" 
+                className="bg-transparent font-black text-white text-[10px] sm:text-xs outline-none w-[95px] sm:w-auto" 
               />
             </div>
 
             <button
               onClick={() => setShowPrintView(true)}
-              className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] rounded-xl uppercase transition-all flex items-center gap-1.5 shadow-md"
+              className="px-2 py-1.5 sm:px-3 sm:py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] rounded-xl uppercase transition-all flex items-center gap-1 sm:gap-1.5 shadow-md"
               title="Gerar visualização para impressão A4 / Salvar em PDF"
             >
-              <Printer size={14} /> Impressão / PDF
+              <Printer size={13} className="sm:w-3.5 sm:h-3.5" />
+              <span className="hidden xs:inline sm:hidden">PDF</span>
+              <span className="hidden sm:inline">Impressão / PDF</span>
             </button>
 
             <button
               onClick={() => setShowBackupModal(true)}
-              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-black text-[10px] rounded-xl uppercase transition-all flex items-center gap-1.5 border border-slate-700"
+              className="px-2 py-1.5 sm:px-3 sm:py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-black text-[10px] rounded-xl uppercase transition-all flex items-center gap-1 sm:gap-1.5 border border-slate-700"
               title="Gerenciar backups locais e histórico multidias"
             >
-              <Database size={14} /> Backups
+              <Database size={13} className="sm:w-3.5 sm:h-3.5" />
+              <span className="hidden sm:inline">Backups</span>
             </button>
 
             <button
               onClick={handleExportJSON}
-              className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-[10px] rounded-xl uppercase transition-all flex items-center gap-1.5"
+              className="px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-[10px] rounded-xl uppercase transition-all flex items-center gap-1 sm:gap-1.5"
               title="Exportar relatório do dia"
             >
-              <Upload size={14} /> Exportar
+              <Upload size={13} className="sm:w-3.5 sm:h-3.5" />
+              <span className="hidden md:inline">Exportar</span>
             </button>
             <button
               onClick={handleImportJSON}
-              className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10px] rounded-xl uppercase transition-all flex items-center gap-1.5"
+              className="px-2 py-1.5 sm:px-3 sm:py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10px] rounded-xl uppercase transition-all flex items-center gap-1 sm:gap-1.5"
               title="Importar relatório"
             >
-              <Download size={14} /> Importar
+              <Download size={13} className="sm:w-3.5 sm:h-3.5" />
+              <span className="hidden md:inline">Importar</span>
             </button>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-6 sm:p-8 lg:p-12 space-y-8 sm:space-y-12 custom-scrollbar print:p-0 print:overflow-visible print:h-auto">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-12 space-y-4 sm:space-y-8 lg:space-y-12 custom-scrollbar print:p-0 print:overflow-visible print:h-auto">
           {view === 'menu-inicial' && (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 sm:gap-12">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-8 xl:gap-12">
                <FuelPanel fuel={fuelData} onChange={(k, v) => saveData({ fuel: {...fuelData, [k]: v}})} />
                <StabilityPanel fuelData={fuelData} data={stabilityData} onChange={(k, v) => saveData({ stability: {...stabilityData, [k]: v}})} />
                <StatusCharts data={equipmentData} />
