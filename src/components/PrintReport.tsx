@@ -276,19 +276,19 @@ export default function PrintReport({ report, onClose }: Props) {
         </div>
 
         {/* 2. Prontidão dos Equipamentos */}
-        <div className="border border-gray-300 rounded-md p-2.5 mb-3">
-          <h3 className="font-black text-[10px] uppercase text-blue-900 border-b border-gray-200 pb-1 mb-2">
+        <div className="border border-gray-300 rounded-md p-3 mb-4">
+          <h3 className="font-black text-xs uppercase text-blue-900 border-b border-gray-200 pb-1.5 mb-2.5">
             3. Prontidão dos Equipamentos por Categoria
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {CATEGORIES.map((cat) => {
               const catItems = cat.items;
               return (
-                <div key={cat.name} className="border-b border-gray-100 pb-1.5 last:border-0 last:pb-0">
-                  <span className="text-[9px] font-black uppercase text-gray-700 block mb-1">
+                <div key={cat.name} className="border-b border-gray-100 pb-2 last:border-0 last:pb-0">
+                  <span className="text-[10.5px] font-black uppercase text-gray-800 block mb-1.5">
                     {cat.name}
                   </span>
-                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5 text-[9px] font-mono">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 font-mono">
                     {catItems.map((item) => {
                       const st = report.equipment[item] || EquipmentStatus.AVAILABLE;
                       const cfg = STATUS_CONFIG[st];
@@ -296,12 +296,12 @@ export default function PrintReport({ report, onClose }: Props) {
                       return (
                         <div 
                           key={item} 
-                          className={`p-1 rounded border leading-tight flex justify-between items-center ${
+                          className={`p-1.5 rounded border leading-tight flex justify-between items-center gap-1.5 ${
                             isProblem ? 'bg-red-50 border-red-200 font-bold' : 'bg-gray-50 border-gray-200'
                           }`}
                         >
-                          <span className="truncate mr-1 font-medium">{item}</span>
-                          <span className={`text-[8px] font-black px-1 py-0.2 rounded uppercase shrink-0 ${
+                          <span className="font-bold text-[10px] sm:text-[10.5px] leading-snug break-words min-w-0 flex-1">{item}</span>
+                          <span className={`text-[8.5px] sm:text-[9px] font-black px-1.5 py-0.5 rounded uppercase shrink-0 ${
                             st === EquipmentStatus.IN_SERVICE || st === EquipmentStatus.IN_LINE
                               ? 'bg-blue-100 text-blue-800'
                               : st === EquipmentStatus.UNAVAILABLE
@@ -319,56 +319,6 @@ export default function PrintReport({ report, onClose }: Props) {
                 </div>
               );
             })}
-          </div>
-        </div>
-
-        {/* 3. Escala do Quarto / Tabela de Serviço */}
-        <div className="border border-gray-300 rounded-md p-2.5 mb-3">
-          <h3 className="font-black text-[10px] uppercase text-blue-900 border-b border-gray-200 pb-1 mb-1.5">
-            4. Tabela de Serviço do CCM
-          </h3>
-          <div className="grid grid-cols-4 gap-2 text-[10px] font-mono leading-tight mb-2 pb-1.5 border-b border-gray-100">
-            <div>
-              <span className="text-gray-500 text-[8px] block font-bold uppercase">Supervisor MO</span>
-              <span className="font-bold">{report.personnel?.supervisorMO || '-'}</span>
-            </div>
-            <div>
-              <span className="text-gray-500 text-[8px] block font-bold uppercase">Supervisor EL</span>
-              <span className="font-bold">{report.personnel?.supervisorEL || '-'}</span>
-            </div>
-            <div>
-              <span className="text-gray-500 text-[8px] block font-bold uppercase">Fiel CAV</span>
-              <span className="font-bold">{report.personnel?.fielCav || '-'}</span>
-            </div>
-            <div>
-              <span className="text-gray-500 text-[8px] block font-bold uppercase">Encarregado Máquinas</span>
-              <span className="font-bold">{report.personnel?.encarregadoMaquinas || '-'}</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 text-[9px] font-mono leading-tight">
-            <div>
-              <span className="text-blue-900 font-bold text-[8px] uppercase block mb-1">Auxiliares de Serviço</span>
-              <div className="grid grid-cols-3 gap-1">
-                {["08-12h", "12-16h", "16-20h"].map((shift, i) => (
-                  <div key={i} className="bg-gray-50 p-1 rounded border border-gray-200">
-                    <span className="text-gray-500 text-[7.5px] block font-bold uppercase">{shift}</span>
-                    <span className="font-bold text-[8.5px] block truncate">{report.personnel?.auxiliares?.[i] || '-'}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <span className="text-blue-900 font-bold text-[8px] uppercase block mb-1">Patrulhas de Serviço</span>
-              <div className="grid grid-cols-3 gap-1">
-                {["08-12h", "12-16h", "16-20h"].map((shift, i) => (
-                  <div key={i} className="bg-gray-50 p-1 rounded border border-gray-200">
-                    <span className="text-gray-500 text-[7.5px] block font-bold uppercase">{shift}</span>
-                    <span className="font-bold text-[8.5px] block truncate">{report.personnel?.patrulha?.[i] || '-'}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
 
