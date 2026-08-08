@@ -31,6 +31,7 @@ import CAVPanel from './components/CAVPanel';
 import RestrictionsPanel from './components/RestrictionsPanel';
 import IsisPanel from './components/IsisPanel';
 import PrintReport from './components/PrintReport';
+import PrintSupervisionReport from './components/PrintSupervisionReport';
 import BackupManagerModal from './components/BackupManagerModal';
 
 const DEFAULT_FUEL: FuelData = { 
@@ -294,6 +295,7 @@ const App: React.FC = () => {
   const [customLogo, setCustomLogo] = useState<string | null>(localStorage.getItem('custom_ship_logo'));
   const [showBackupModal, setShowBackupModal] = useState(false);
   const [showPrintView, setShowPrintView] = useState(false);
+  const [showSupervisionPrintView, setShowSupervisionPrintView] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -736,7 +738,14 @@ const App: React.FC = () => {
           {view === 'fuel' && <FuelPanel fuel={fuelData} fullWidth onChange={(k, v) => saveData({ fuel: {...fuelData, [k]: v}})} />}
           {view === 'stability' && <StabilityPanel fuelData={fuelData} data={stabilityData} onChange={(k, v) => saveData({ stability: {...stabilityData, [k]: v}})} />}
           {view === 'cav' && <CAVPanel eductorStatuses={eductorStatuses} onStatusToggle={handleEductorToggle} />}
-          {view === 'restrictions' && <RestrictionsPanel data={equipmentData} reasons={restrictionReasons} onReasonChange={handleReasonChange} />}
+          {view === 'restrictions' && (
+            <RestrictionsPanel 
+              data={equipmentData} 
+              reasons={restrictionReasons} 
+              onReasonChange={handleReasonChange} 
+              onPrintSupervision={() => setShowSupervisionPrintView(true)}
+            />
+          )}
           {view === 'isis' && <IsisPanel overrides={isisOverrides} onOverrideChange={handleIsisOverride} />}
           {view === 'personnel' && <PersonnelView data={personnelData} onChange={(k, v) => saveData({ personnel: { ...personnelData, [k as keyof PersonnelData]: v } })} serviceNotes={serviceNotes} onServiceNotesChange={handleServiceNotesChange} />}
         </div>
@@ -758,6 +767,26 @@ const App: React.FC = () => {
               serviceNotes
             }}
             onClose={() => setShowPrintView(false)}
+          />
+        </div>
+      )}
+
+      {showSupervisionPrintView && (
+        <div className="fixed inset-0 z-[200] overflow-y-auto bg-slate-950">
+          <PrintSupervisionReport 
+            report={{
+              date: selectedDate,
+              equipment: equipmentData,
+              fuel: fuelData,
+              stability: stabilityData,
+              personnel: personnelData,
+              restrictionReasons,
+              eductorStatuses,
+              isisOverrides,
+              logs,
+              serviceNotes
+            }}
+            onClose={() => setShowSupervisionPrintView(false)}
           />
         </div>
       )}
