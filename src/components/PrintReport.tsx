@@ -276,19 +276,19 @@ export default function PrintReport({ report, onClose }: Props) {
         </div>
 
         {/* 2. Prontidão dos Equipamentos */}
-        <div className="border border-gray-300 rounded-md p-3 mb-4">
-          <h3 className="font-black text-xs uppercase text-blue-900 border-b border-gray-200 pb-1.5 mb-2.5">
+        <div className="border border-gray-300 rounded-md p-2.5 mb-3">
+          <h3 className="font-black text-[11px] uppercase text-blue-900 border-b border-gray-200 pb-1 mb-2">
             3. Prontidão dos Equipamentos por Categoria
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {CATEGORIES.map((cat) => {
               const catItems = cat.items;
               return (
-                <div key={cat.name} className="border-b border-gray-100 pb-2 last:border-0 last:pb-0">
-                  <span className="text-[10.5px] font-black uppercase text-gray-800 block mb-1.5">
+                <div key={cat.name} className="border-b border-gray-100 pb-1.5 last:border-0 last:pb-0">
+                  <span className="text-[10px] font-black uppercase text-gray-800 block mb-1">
                     {cat.name}
                   </span>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 font-mono">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 font-mono">
                     {catItems.map((item) => {
                       const st = report.equipment[item] || EquipmentStatus.AVAILABLE;
                       const cfg = STATUS_CONFIG[st];
@@ -296,12 +296,12 @@ export default function PrintReport({ report, onClose }: Props) {
                       return (
                         <div 
                           key={item} 
-                          className={`p-1.5 rounded border leading-tight flex justify-between items-center gap-1.5 ${
+                          className={`p-1 rounded border leading-tight flex justify-between items-center gap-1 ${
                             isProblem ? 'bg-red-50 border-red-200 font-bold' : 'bg-gray-50 border-gray-200'
                           }`}
                         >
-                          <span className="font-bold text-[10px] sm:text-[10.5px] leading-snug break-words min-w-0 flex-1">{item}</span>
-                          <span className={`text-[8.5px] sm:text-[9px] font-black px-1.5 py-0.5 rounded uppercase shrink-0 ${
+                          <span className="font-bold text-[9px] sm:text-[9.5px] leading-snug break-words min-w-0 flex-1">{item}</span>
+                          <span className={`text-[7.5px] sm:text-[8px] font-black px-1 py-0.5 rounded uppercase shrink-0 ${
                             st === EquipmentStatus.IN_SERVICE || st === EquipmentStatus.IN_LINE
                               ? 'bg-blue-100 text-blue-800'
                               : st === EquipmentStatus.UNAVAILABLE
@@ -325,7 +325,7 @@ export default function PrintReport({ report, onClose }: Props) {
         </div>
 
         {/* Signatures pushed to footer without top divider line */}
-        <div className="mt-auto pt-10 grid grid-cols-3 gap-6 text-center text-[10px] uppercase font-black">
+        <div className="mt-auto pt-6 grid grid-cols-3 gap-6 text-center text-[10px] uppercase font-black">
           <div>
             <div className="border-b-2 border-black mb-2 w-4/5 mx-auto"></div>
             <span>SUPERVISOR DO CCM</span>
