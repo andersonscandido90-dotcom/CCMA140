@@ -15,7 +15,6 @@ import {
   ShieldAlert,
   ClipboardList,
   Clock,
-  Palette,
   Download,
   Upload,
   Printer,
@@ -51,14 +50,6 @@ const DEFAULT_PERSONNEL: PersonnelData = {
   supervisorMO: '', supervisorEL: '', fielCav: '',
   encarregadoMaquinas: '', auxiliares: ['', '', ''], patrulha: ['', '', '']
 };
-
-const THEMES = [
-  { id: 'bg-slate-950', label: 'Slate', color: '#0f172a' },
-  { id: 'bg-black', label: 'Midnight', color: '#000000' },
-  { id: 'bg-blue-950', label: 'Navy', color: '#08142c' },
-  { id: 'bg-emerald-950', label: 'Emerald', color: '#061a15' },
-  { id: 'bg-neutral-950', label: 'Carbon', color: '#0a0a0a' },
-];
 
 const ShipLogo = memo(({ className = "w-24 h-auto", customUrl }: { className?: string, customUrl?: string | null }) => {
   const [imageError, setImageError] = useState(false);
@@ -297,7 +288,6 @@ const App: React.FC = () => {
   const [isisOverrides, setIsisOverrides] = useState<Record<string, string>>(initialReport.isisOverrides);
   const [logs, setLogs] = useState<LogEntry[]>(initialReport.logs);
   const [serviceNotes, setServiceNotes] = useState<string>(initialReport.serviceNotes || '');
-  const [currentTheme, setCurrentTheme] = useState<string>(localStorage.getItem('app_theme') || 'bg-slate-950');
   const [view, setView] = useState<'menu-inicial' | 'equipment' | 'fuel' | 'stability' | 'personnel' | 'tv-mode' | 'cav' | 'restrictions' | 'isis'>('menu-inicial');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentTvSlide, setCurrentTvSlide] = useState(0);
@@ -457,11 +447,6 @@ const App: React.FC = () => {
     saveData({ isisOverrides: newOverrides });
   };
 
-  const handleThemeChange = (themeId: string) => {
-    setCurrentTheme(themeId);
-    localStorage.setItem('app_theme', themeId);
-  };
-
   const handleViewChange = (newView: any) => {
     setView(newView);
     setSidebarOpen(false);
@@ -569,7 +554,7 @@ const App: React.FC = () => {
 
   if (view === 'tv-mode') {
     return (
-      <div className={`fixed inset-0 ${currentTheme} text-white flex flex-col overflow-hidden z-[100]`}>
+      <div className="fixed inset-0 bg-slate-950 text-white flex flex-col overflow-hidden z-[100]">
         <div className="bg-slate-900 border-b-4 border-blue-600 p-8 flex justify-between items-center">
           <div className="flex items-center gap-8">
             <ShipLogo className="h-24 w-auto" customUrl={customLogo} />
@@ -596,7 +581,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className={`min-h-screen flex ${currentTheme} text-slate-100 selection:bg-blue-600 relative overflow-x-hidden transition-colors duration-700`}>
+    <div className="min-h-screen flex bg-slate-950 text-slate-100 selection:bg-blue-600 relative overflow-x-hidden">
       {sidebarOpen && (
         <div 
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] lg:hidden animate-in fade-in duration-300"
@@ -654,19 +639,6 @@ const App: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
-            <div className="hidden md:flex items-center gap-2 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800">
-              <Palette size={14} className="mx-2 text-slate-500" />
-              {THEMES.map(theme => (
-                <button
-                  key={theme.id}
-                  onClick={() => handleThemeChange(theme.id)}
-                  title={theme.label}
-                  className={`w-8 h-8 rounded-xl border-2 transition-all ${currentTheme === theme.id ? 'border-blue-500 scale-110 shadow-lg' : 'border-transparent opacity-50 hover:opacity-100'}`}
-                  style={{ backgroundColor: theme.color }}
-                />
-              ))}
-            </div>
-
             <div className="bg-slate-900 px-3 py-2 sm:px-4 sm:py-2 rounded-xl flex items-center gap-2 sm:gap-3 border border-slate-800 shadow-inner">
               <Calendar size={14} className="text-blue-500 shrink-0" />
               <input 
