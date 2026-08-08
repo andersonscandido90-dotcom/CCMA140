@@ -553,27 +553,62 @@ const App: React.FC = () => {
   }, [view, NAV_ITEMS]);
 
   if (view === 'tv-mode') {
+    const TV_SLIDES = [
+      { id: 'equipment', label: 'Equipamentos' },
+      { id: 'fuel', label: 'Cargas' },
+      { id: 'stability', label: 'Estabilidade' },
+      { id: 'cav', label: 'CAV' },
+      { id: 'isis', label: 'ISIS' },
+      { id: 'personnel', label: 'Tabela de Serviço' },
+    ];
+
     return (
       <div className="fixed inset-0 bg-slate-950 text-white flex flex-col overflow-hidden z-[100]">
-        <div className="bg-slate-900 border-b-4 border-blue-600 p-8 flex justify-between items-center">
-          <div className="flex items-center gap-8">
-            <ShipLogo className="h-24 w-auto" customUrl={customLogo} />
+        <div className="bg-slate-900 border-b-4 border-blue-600 p-4 sm:p-6 lg:p-8 flex justify-between items-center shrink-0">
+          <div className="flex items-center gap-4 sm:gap-8">
+            <ShipLogo className="h-14 sm:h-20 lg:h-24 w-auto" customUrl={customLogo} />
             <div>
-              <h1 className="text-5xl font-black uppercase">{SHIP_CONFIG.name}</h1>
-              <p className="text-xl text-slate-400 font-bold uppercase">{formattedSelectedDate}</p>
+              <h1 className="text-xl sm:text-3xl lg:text-5xl font-black uppercase tracking-tight">{SHIP_CONFIG.name}</h1>
+              <p className="text-xs sm:text-base lg:text-xl text-slate-400 font-bold uppercase">{formattedSelectedDate}</p>
             </div>
           </div>
-          <button onClick={() => setView('menu-inicial')} className="bg-red-600 px-8 py-4 rounded-xl font-black">SAIR</button>
+          <button 
+            onClick={() => setView('menu-inicial')} 
+            className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 sm:px-8 sm:py-4 rounded-xl font-black uppercase text-xs sm:text-base transition-all shadow-lg"
+          >
+            Sair do Modo TV
+          </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
-          {currentTvSlide === 0 && <StabilityPanel fuelData={fuelData} data={stabilityData} onChange={(k, v) => saveData({ stability: {...stabilityData, [k]: v}})} />}
+
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 lg:p-10 custom-scrollbar">
+          {currentTvSlide === 0 && <EquipmentSection categories={CATEGORIES} data={equipmentData} onStatusChange={handleStatusChange} />}
           {currentTvSlide === 1 && <FuelPanel fuel={fuelData} fullWidth onChange={(k, v) => saveData({ fuel: {...fuelData, [k]: v}})} />}
-          {currentTvSlide === 2 && <EquipmentSection categories={CATEGORIES} data={equipmentData} onStatusChange={handleStatusChange} />}
+          {currentTvSlide === 2 && <StabilityPanel fuelData={fuelData} data={stabilityData} onChange={(k, v) => saveData({ stability: {...stabilityData, [k]: v}})} />}
           {currentTvSlide === 3 && <CAVPanel eductorStatuses={eductorStatuses} onStatusToggle={handleEductorToggle} />}
+          {currentTvSlide === 4 && <IsisPanel overrides={isisOverrides} onOverrideChange={handleIsisOverride} />}
+          {currentTvSlide === 5 && (
+            <PersonnelView 
+              data={personnelData} 
+              onChange={(k, v) => saveData({ personnel: { ...personnelData, [k as keyof PersonnelData]: v } })} 
+              serviceNotes={serviceNotes} 
+              onServiceNotesChange={handleServiceNotesChange} 
+            />
+          )}
         </div>
-        <div className="bg-slate-900 p-6 flex justify-center gap-6">
-          {['ESTABILIDADE', 'CARGAS', 'EQUIPAMENTOS', 'CAV'].map((l, i) => (
-            <button key={l} onClick={() => setCurrentTvSlide(i)} className={`px-10 py-4 rounded-xl font-black ${currentTvSlide === i ? 'bg-blue-600' : 'bg-slate-800'}`}>{l}</button>
+
+        <div className="bg-slate-900 border-t border-slate-800 p-3 sm:p-5 flex items-center justify-center gap-2 sm:gap-4 flex-wrap shrink-0">
+          {TV_SLIDES.map((slide, i) => (
+            <button 
+              key={slide.id} 
+              onClick={() => setCurrentTvSlide(i)} 
+              className={`px-3 py-2 sm:px-6 sm:py-3 rounded-xl font-black text-xs sm:text-sm lg:text-base transition-all uppercase ${
+                currentTvSlide === i 
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 scale-105' 
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
+              }`}
+            >
+              {slide.label}
+            </button>
           ))}
         </div>
       </div>
