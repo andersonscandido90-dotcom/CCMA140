@@ -192,10 +192,51 @@ export default function PrintSupervisionReport({ report, onClose }: Props) {
             )}
           </div>
 
-          {/* 2. Anotações Gerais do Serviço */}
+          {/* 2. Trabalhos a Quente (Corte / Solda - CAV) */}
+          {report.corteSoldaList && report.corteSoldaList.length > 0 && (
+            <div className="border border-gray-300 rounded-md p-4 mb-6 break-inside-avoid">
+              <div className="flex justify-between items-center border-b border-gray-200 pb-2 mb-3">
+                <h3 className="font-black text-sm sm:text-base uppercase text-blue-900">
+                  2. Trabalhos a Quente Autorizados (CAV - Corte / Solda)
+                </h3>
+                <span className="text-xs font-bold text-gray-700 bg-gray-100 px-3 py-1 rounded">
+                  Total: {report.corteSoldaList.length}
+                </span>
+              </div>
+              <div className="space-y-3">
+                {report.corteSoldaList.map((cs, idx) => {
+                  const servicosList = [];
+                  if (cs.servicos?.corte) servicosList.push('CORTE');
+                  if (cs.servicos?.solda) servicosList.push('SOLDA');
+                  if (cs.servicos?.aquecimento) servicosList.push('AQUECIMENTO EM PEÇA');
+
+                  return (
+                    <div key={cs.id || idx} className="p-3 rounded-lg border border-gray-200 bg-gray-50/50 break-inside-avoid text-xs font-mono text-gray-900 space-y-1.5">
+                      <div className="flex justify-between items-center border-b border-gray-200 pb-1">
+                        <span className="font-black text-sm text-gray-900">COMPARTIMENTO: {cs.compartimento || 'NÃO INFORMADO'}</span>
+                        <span className="font-bold text-[10px] text-amber-800 bg-amber-100 px-2 py-0.5 rounded uppercase">TRABALHO #{idx + 1}</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        <div><span className="font-bold text-gray-600">SOLDADOR:</span> {cs.soldador || '-'}</div>
+                        <div><span className="font-bold text-gray-600">OMPS / EMPRESA:</span> {cs.ompsEmpresa || '-'}</div>
+                      </div>
+                      <div>
+                        <span className="font-bold text-gray-600">SERVIÇO:</span> {servicosList.length > 0 ? servicosList.join(' | ') : 'NENHUM SELECIONADO'}
+                      </div>
+                      <div>
+                        <span className="font-bold text-gray-600">FIRE-BOY (SENTINELAS):</span> {cs.fireBoys && cs.fireBoys.filter(fb => fb.trim()).length > 0 ? cs.fireBoys.filter(fb => fb.trim()).join(', ') : 'NENHUM INFORMADO'}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 3. Anotações Gerais do Serviço */}
           <div className="border border-gray-300 rounded-md p-4 mb-6 break-inside-avoid">
             <h3 className="font-black text-sm sm:text-base uppercase text-blue-900 border-b border-gray-200 pb-2 mb-3">
-              2. Anotações do Serviço / Ocorrências Gerais
+              {report.corteSoldaList && report.corteSoldaList.length > 0 ? '3.' : '2.'} Anotações do Serviço / Ocorrências Gerais
             </h3>
             {report.serviceNotes && report.serviceNotes.trim().length > 0 ? (
               <p className="text-sm font-mono whitespace-pre-wrap text-gray-900 leading-relaxed bg-gray-50 p-3 rounded border border-gray-200">

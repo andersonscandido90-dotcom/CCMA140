@@ -63,6 +63,19 @@ export interface IsisEntry {
   category?: string;
 }
 
+export interface CorteSoldaEntry {
+  id: string;
+  compartimento: string;
+  soldador: string;
+  ompsEmpresa: string;
+  servicos: {
+    corte: boolean;
+    solda: boolean;
+    aquecimento: boolean;
+  };
+  fireBoys: string[];
+}
+
 export interface DailyReport {
   date: string;
   equipment: EquipmentData;
@@ -74,6 +87,7 @@ export interface DailyReport {
   restrictionReasons?: Record<string, string>;
   eductorStatuses?: Record<string, boolean>;
   isisOverrides?: Record<string, string>;
+  corteSoldaList?: CorteSoldaEntry[];
   theme?: string;
 }
 

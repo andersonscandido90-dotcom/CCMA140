@@ -53,8 +53,8 @@ const CAVPanel: React.FC<Props> = ({ eductorStatuses, onStatusToggle, readOnly }
             <ShieldAlert className="w-7 h-7 sm:w-10 sm:h-10 text-white" />
           </div>
           <div>
-            <h3 className="font-black text-white uppercase text-xl sm:text-3xl lg:text-5xl tracking-tighter">Controle de Avarias (CAV)</h3>
-            <p className="text-slate-500 font-bold uppercase text-[9px] sm:text-xs lg:text-sm tracking-widest mt-0.5 sm:mt-1">Esgoto por Arrastamento (Edutores)</p>
+            <h3 className="font-black text-white uppercase text-xl sm:text-3xl lg:text-5xl tracking-tighter">Edutores de Esgoto</h3>
+            <p className="text-slate-500 font-bold uppercase text-[9px] sm:text-xs lg:text-sm tracking-widest mt-0.5 sm:mt-1">Esgoto por Arrastamento (Controle de Avarias)</p>
           </div>
         </div>
       </div>

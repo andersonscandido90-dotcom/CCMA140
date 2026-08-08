@@ -18,9 +18,11 @@ import {
   Download,
   Upload,
   Printer,
-  Database
+  Database,
+  Flame,
+  Waves
 } from 'lucide-react';
-import { EquipmentStatus, DailyReport, FuelData, EquipmentData, StabilityData, PersonnelData, LogEntry } from './types';
+import { EquipmentStatus, DailyReport, FuelData, EquipmentData, StabilityData, PersonnelData, LogEntry, CorteSoldaEntry } from './types';
 import { CATEGORIES, SHIP_CONFIG } from './constants';
 import EquipmentSection from './components/EquipmentSection';
 import FuelPanel from './components/FuelPanel';
@@ -28,6 +30,7 @@ import StabilityPanel from './components/StabilityPanel';
 import StatusCharts from './components/StatusCharts';
 import ActivityLog from './components/ActivityLog';
 import CAVPanel from './components/CAVPanel';
+import CorteSoldaPanel from './components/CorteSoldaPanel';
 import RestrictionsPanel from './components/RestrictionsPanel';
 import IsisPanel from './components/IsisPanel';
 import PrintReport from './components/PrintReport';
@@ -263,6 +266,7 @@ const initializeAppData = () => {
       restrictionReasons: {},
       eductorStatuses: {},
       isisOverrides: {},
+      corteSoldaList: [],
       logs: [],
       serviceNotes: localStorage.getItem('service_notes') || ''
     };
@@ -270,6 +274,9 @@ const initializeAppData = () => {
     // Garante que serviceNotes exista, senão tenta recuperar do localStorage antigo
     if (!report.serviceNotes) {
       report.serviceNotes = localStorage.getItem('service_notes') || '';
+    }
+    if (!report.corteSoldaList) {
+      report.corteSoldaList = [];
     }
   }
 
@@ -287,9 +294,10 @@ const App: React.FC = () => {
   const [restrictionReasons, setRestrictionReasons] = useState<Record<string, string>>(initialReport.restrictionReasons);
   const [eductorStatuses, setEductorStatuses] = useState<Record<string, boolean>>(initialReport.eductorStatuses);
   const [isisOverrides, setIsisOverrides] = useState<Record<string, string>>(initialReport.isisOverrides);
+  const [corteSoldaList, setCorteSoldaList] = useState<CorteSoldaEntry[]>(initialReport.corteSoldaList || []);
   const [logs, setLogs] = useState<LogEntry[]>(initialReport.logs);
   const [serviceNotes, setServiceNotes] = useState<string>(initialReport.serviceNotes || '');
-  const [view, setView] = useState<'menu-inicial' | 'equipment' | 'fuel' | 'stability' | 'personnel' | 'tv-mode' | 'cav' | 'restrictions' | 'isis'>('menu-inicial');
+  const [view, setView] = useState<'menu-inicial' | 'equipment' | 'fuel' | 'stability' | 'personnel' | 'tv-mode' | 'eductors' | 'cav' | 'restrictions' | 'isis'>('menu-inicial');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentTvSlide, setCurrentTvSlide] = useState(0);
   const [customLogo, setCustomLogo] = useState<string | null>(localStorage.getItem('custom_ship_logo'));
@@ -305,7 +313,8 @@ const App: React.FC = () => {
     { id: 'restrictions', icon: <ClipboardList size={18} />, label: 'Restrições' },
     { id: 'fuel', icon: <Droplets size={18} />, label: 'Cargas' },
     { id: 'stability', icon: <Compass size={18} />, label: 'Estabilidade' },
-    { id: 'cav', icon: <ShieldAlert size={18} />, label: 'CAV' },
+    { id: 'eductors', icon: <Waves size={18} />, label: 'Edutores' },
+    { id: 'cav', icon: <Flame size={18} />, label: 'CAV' },
     { id: 'isis', icon: <Monitor size={18} />, label: 'ISIS' },
     { id: 'personnel', icon: <Users size={18} />, label: 'Tabela de Serviço' }
   ], []);
@@ -337,6 +346,7 @@ const App: React.FC = () => {
         setRestrictionReasons(data.restrictionReasons || {});
         setEductorStatuses(data.eductorStatuses || {});
         setIsisOverrides(data.isisOverrides || {});
+        setCorteSoldaList(data.corteSoldaList || []);
         setLogs(data.logs || []);
         setServiceNotes(data.serviceNotes || localStorage.getItem('service_notes') || '');
         console.log('✅ Dados carregados para', newDate);
@@ -349,6 +359,7 @@ const App: React.FC = () => {
       setRestrictionReasons({});
       setEductorStatuses({});
       setIsisOverrides({});
+      setCorteSoldaList([]);
       setLogs([]);
       setServiceNotes('');
       console.log('📭 Nenhum dado para', newDate);
@@ -365,6 +376,7 @@ const App: React.FC = () => {
       restrictionReasons,
       eductorStatuses,
       isisOverrides,
+      corteSoldaList,
       logs,
       serviceNotes
     };
@@ -379,6 +391,7 @@ const App: React.FC = () => {
     if (updates.personnel) setPersonnelData(updates.personnel);
     if (updates.restrictionReasons) setRestrictionReasons(updates.restrictionReasons);
     if (updates.eductorStatuses) setEductorStatuses(updates.eductorStatuses);
+    if (updates.corteSoldaList) setCorteSoldaList(updates.corteSoldaList);
     if (updates.isisOverrides) {
       setIsisOverrides(updates.isisOverrides);
       localStorage.setItem('master_isis_overrides', JSON.stringify(updates.isisOverrides));
@@ -398,6 +411,7 @@ const App: React.FC = () => {
       restrictionReasons: updates.restrictionReasons !== undefined ? updates.restrictionReasons : restrictionReasons,
       eductorStatuses: updates.eductorStatuses !== undefined ? updates.eductorStatuses : eductorStatuses,
       isisOverrides: updates.isisOverrides !== undefined ? updates.isisOverrides : isisOverrides,
+      corteSoldaList: updates.corteSoldaList !== undefined ? updates.corteSoldaList : corteSoldaList,
       logs: updates.logs !== undefined ? updates.logs : logs,
       serviceNotes: updates.serviceNotes !== undefined ? updates.serviceNotes : serviceNotes
     };
@@ -467,7 +481,7 @@ const App: React.FC = () => {
     }
   };
 
-  // 📤 Exportar JSON (agora com anotações)
+  // 📤 Exportar JSON (agora com anotações e corte/solda)
   const handleExportJSON = () => {
     saveCurrentReport();
     const relatorio: DailyReport = {
@@ -479,6 +493,7 @@ const App: React.FC = () => {
       restrictionReasons,
       eductorStatuses,
       isisOverrides,
+      corteSoldaList,
       logs,
       serviceNotes
     };
@@ -493,7 +508,7 @@ const App: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  // 📥 Importar JSON (agora com anotações)
+  // 📥 Importar JSON (agora com anotações e corte/solda)
   const handleImportJSON = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -523,6 +538,7 @@ const App: React.FC = () => {
           setRestrictionReasons(dados.restrictionReasons || {});
           setEductorStatuses(dados.eductorStatuses || {});
           setIsisOverrides(dados.isisOverrides || {});
+          setCorteSoldaList(dados.corteSoldaList || []);
           setLogs(dados.logs || []);
           setServiceNotes(dados.serviceNotes || '');
           localStorage.setItem(`report_${usarDataOriginal ? dados.date : selectedDate}`, JSON.stringify(dados));
@@ -559,6 +575,7 @@ const App: React.FC = () => {
       { id: 'equipment', label: 'Equipamentos' },
       { id: 'fuel', label: 'Cargas' },
       { id: 'stability', label: 'Estabilidade' },
+      { id: 'eductors', label: 'Edutores' },
       { id: 'cav', label: 'CAV' },
       { id: 'isis', label: 'ISIS' },
       { id: 'personnel', label: 'Tabela de Serviço' },
@@ -587,8 +604,9 @@ const App: React.FC = () => {
           {currentTvSlide === 1 && <FuelPanel fuel={fuelData} fullWidth onChange={(k, v) => saveData({ fuel: {...fuelData, [k]: v}})} />}
           {currentTvSlide === 2 && <StabilityPanel fuelData={fuelData} data={stabilityData} onChange={(k, v) => saveData({ stability: {...stabilityData, [k]: v}})} />}
           {currentTvSlide === 3 && <CAVPanel eductorStatuses={eductorStatuses} onStatusToggle={handleEductorToggle} />}
-          {currentTvSlide === 4 && <IsisPanel overrides={isisOverrides} onOverrideChange={handleIsisOverride} />}
-          {currentTvSlide === 5 && (
+          {currentTvSlide === 4 && <CorteSoldaPanel list={corteSoldaList} onChange={(list) => saveData({ corteSoldaList: list })} readOnly />}
+          {currentTvSlide === 5 && <IsisPanel overrides={isisOverrides} onOverrideChange={handleIsisOverride} />}
+          {currentTvSlide === 6 && (
             <PersonnelView 
               data={personnelData} 
               onChange={(k, v) => saveData({ personnel: { ...personnelData, [k as keyof PersonnelData]: v } })} 
@@ -629,6 +647,7 @@ const App: React.FC = () => {
           restrictionReasons,
           eductorStatuses,
           isisOverrides,
+          corteSoldaList,
           logs,
           serviceNotes
         }}
@@ -649,6 +668,7 @@ const App: React.FC = () => {
           restrictionReasons,
           eductorStatuses,
           isisOverrides,
+          corteSoldaList,
           logs,
           serviceNotes
         }}
@@ -777,7 +797,8 @@ const App: React.FC = () => {
           {view === 'equipment' && <EquipmentSection categories={CATEGORIES} data={equipmentData} onStatusChange={handleStatusChange} />}
           {view === 'fuel' && <FuelPanel fuel={fuelData} fullWidth onChange={(k, v) => saveData({ fuel: {...fuelData, [k]: v}})} />}
           {view === 'stability' && <StabilityPanel fuelData={fuelData} data={stabilityData} onChange={(k, v) => saveData({ stability: {...stabilityData, [k]: v}})} />}
-          {view === 'cav' && <CAVPanel eductorStatuses={eductorStatuses} onStatusToggle={handleEductorToggle} />}
+          {view === 'eductors' && <CAVPanel eductorStatuses={eductorStatuses} onStatusToggle={handleEductorToggle} />}
+          {view === 'cav' && <CorteSoldaPanel list={corteSoldaList} onChange={(list) => saveData({ corteSoldaList: list })} />}
           {view === 'restrictions' && (
             <RestrictionsPanel 
               data={equipmentData} 
