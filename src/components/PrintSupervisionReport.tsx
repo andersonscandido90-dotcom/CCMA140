@@ -37,7 +37,7 @@ export default function PrintSupervisionReport({ report, onClose }: Props) {
           html, body {
             background: #fff !important;
             color: #000 !important;
-            font-size: 11px !important;
+            font-size: 12pt !important;
             overflow: visible !important;
             height: auto !important;
             width: 100% !important;
@@ -145,22 +145,22 @@ export default function PrintSupervisionReport({ report, onClose }: Props) {
           </div>
 
           {/* 1. Registro de Restrições e Indisponibilidades */}
-          <div className="border border-gray-300 rounded-md p-3.5 mb-5">
-            <div className="flex justify-between items-center border-b border-gray-200 pb-1.5 mb-2.5">
-              <h3 className="font-black text-xs sm:text-sm uppercase text-blue-900">
+          <div className="border border-gray-300 rounded-md p-4 mb-6">
+            <div className="flex justify-between items-center border-b border-gray-200 pb-2 mb-3">
+              <h3 className="font-black text-sm sm:text-base uppercase text-blue-900">
                 1. Equipamentos com Restrição ou Indisponibilidade
               </h3>
-              <span className="text-[10px] sm:text-xs font-bold text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded">
+              <span className="text-xs font-bold text-gray-700 bg-gray-100 px-3 py-1 rounded">
                 Total: {restrictedItems.length}
               </span>
             </div>
 
             {restrictedItems.length === 0 ? (
-              <div className="p-4 text-center text-xs text-gray-500 font-mono italic bg-gray-50 rounded border border-gray-100">
+              <div className="p-4 text-center text-sm text-gray-500 font-mono italic bg-gray-50 rounded border border-gray-100">
                 Nenhuma restrição ou indisponibilidade registrada para este dia.
               </div>
             ) : (
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 {restrictedItems.map(([item, status]) => {
                   const cfg = STATUS_CONFIG[status];
                   const reason = report.restrictionReasons?.[item] || 'Sem detalhes informados.';
@@ -169,20 +169,20 @@ export default function PrintSupervisionReport({ report, onClose }: Props) {
                   return (
                     <div 
                       key={item} 
-                      className={`p-2.5 rounded border text-xs break-inside-avoid ${
+                      className={`p-3 rounded-lg border break-inside-avoid ${
                         isProblem ? 'bg-red-50/70 border-red-200' : 'bg-amber-50/70 border-amber-200'
                       }`}
                     >
-                      <div className="flex justify-between items-center mb-1.5">
-                        <span className="font-black text-gray-900 text-xs sm:text-sm">{item}</span>
-                        <span className={`px-2.5 py-0.5 rounded text-[9px] sm:text-[10px] font-black uppercase ${
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-black text-gray-900 text-sm sm:text-base">{item}</span>
+                        <span className={`px-3 py-1 rounded text-xs font-black uppercase tracking-wide ${
                           isProblem ? 'bg-red-600 text-white' : 'bg-amber-600 text-white'
                         }`}>
                           {cfg?.label || status}
                         </span>
                       </div>
-                      <div className="text-xs font-mono text-gray-800 leading-normal bg-white p-2 rounded border border-gray-200/80">
-                        <span className="font-bold text-gray-500 mr-1.5 uppercase text-[9px]">Motivo/Ação:</span>
+                      <div className="text-sm font-mono text-gray-900 leading-relaxed bg-white p-2.5 rounded border border-gray-200/80">
+                        <span className="font-bold text-gray-600 mr-2 uppercase text-xs block sm:inline mb-1 sm:mb-0">Motivo/Ação:</span>
                         {reason}
                       </div>
                     </div>
@@ -193,16 +193,16 @@ export default function PrintSupervisionReport({ report, onClose }: Props) {
           </div>
 
           {/* 2. Anotações Gerais do Serviço */}
-          <div className="border border-gray-300 rounded-md p-3.5 mb-5 break-inside-avoid">
-            <h3 className="font-black text-xs sm:text-sm uppercase text-blue-900 border-b border-gray-200 pb-1.5 mb-2">
+          <div className="border border-gray-300 rounded-md p-4 mb-6 break-inside-avoid">
+            <h3 className="font-black text-sm sm:text-base uppercase text-blue-900 border-b border-gray-200 pb-2 mb-3">
               2. Anotações do Serviço / Ocorrências Gerais
             </h3>
             {report.serviceNotes && report.serviceNotes.trim().length > 0 ? (
-              <p className="text-xs font-mono whitespace-pre-wrap text-gray-800 leading-normal bg-gray-50 p-2.5 rounded border border-gray-200">
+              <p className="text-sm font-mono whitespace-pre-wrap text-gray-900 leading-relaxed bg-gray-50 p-3 rounded border border-gray-200">
                 {report.serviceNotes}
               </p>
             ) : (
-              <div className="text-xs font-mono text-gray-400 italic p-2.5 bg-gray-50 rounded border border-gray-200">
+              <div className="text-sm font-mono text-gray-400 italic p-3 bg-gray-50 rounded border border-gray-200">
                 Nenhuma anotação de serviço registrada nesta data.
               </div>
             )}
