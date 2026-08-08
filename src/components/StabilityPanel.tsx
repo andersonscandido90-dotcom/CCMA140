@@ -1,6 +1,6 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { StabilityData, FuelData } from '../types';
-import { Compass, MoveVertical, Anchor, Gauge, Ship, Activity, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Compass, MoveVertical, Anchor, Gauge, Ship, Activity, AlertCircle, CheckCircle2, HelpCircle, X, BookOpen, Calculator, Droplets } from 'lucide-react';
 
 interface Props {
   data: StabilityData;
@@ -9,6 +9,7 @@ interface Props {
 }
 
 const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange }) => {
+  const [showCalcModal, setShowCalcModal] = useState(false);
   const meanDraft = (data.draftForward + data.draftAft) / 2;
   const trim = data.draftForward - data.draftAft; // Positivo = trim para vante
   
@@ -431,15 +432,147 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange }) => {
           </div>
           
           {/* Mostrar qual caso estamos usando */}
-          <div className="text-xs text-amber-400 mt-2 border-t border-slate-700 pt-2">
-            {trim < 0 ? (
-              trim < -1.0 ? 'Caso: Trim grande para ré (>1.0m)' : 'Caso: Trim pequeno para ré (≤1.0m)'
-            ) : (
-              trim > 1.0 ? 'Caso: Trim grande para vante (>1.0m)' : 'Caso: Trim pequeno para vante (≤1.0m)'
-            )}
+          <div className="text-xs text-amber-400 mt-2 border-t border-slate-700 pt-2 flex justify-between items-center">
+            <span>
+              {trim < 0 ? (
+                trim < -1.0 ? 'Caso: Trim grande para ré (>1.0m)' : 'Caso: Trim pequeno para ré (≤1.0m)'
+              ) : (
+                trim > 1.0 ? 'Caso: Trim grande para vante (>1.0m)' : 'Caso: Trim pequeno para vante (≤1.0m)'
+              )}
+            </span>
+            <button
+              onClick={() => setShowCalcModal(true)}
+              className="text-[10px] text-blue-400 font-black uppercase hover:underline flex items-center gap-1"
+            >
+              <BookOpen size={12} /> Ver Fórmulas e Detalhes
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Modal de Explicação Completa dos Cálculos */}
+      {showCalcModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-4xl w-full p-5 sm:p-8 shadow-2xl relative my-8 max-h-[90vh] overflow-y-auto">
+            {/* Botão Fechar */}
+            <button
+              onClick={() => setShowCalcModal(false)}
+              className="absolute top-5 right-5 p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-full transition-all"
+            >
+              <X size={20} />
+            </button>
+
+            {/* Cabeçalho do Modal */}
+            <div className="flex items-center gap-4 border-b border-slate-800 pb-5 mb-6">
+              <div className="p-3 bg-blue-600 rounded-2xl text-white shadow-lg shrink-0">
+                <Calculator size={28} />
+              </div>
+              <div>
+                <h3 className="font-black text-white uppercase text-xl sm:text-2xl tracking-tight">
+                  Memória de Cálculo de Estabilidade (A140)
+                </h3>
+                <p className="text-blue-400 font-bold text-xs uppercase tracking-wider">
+                  Fórmulas, Tabela Hidrostática e Variação por Densidade
+                </p>
+              </div>
+            </div>
+
+            {/* Conteúdo Explicativo */}
+            <div className="space-y-6 text-slate-300 text-xs sm:text-sm font-sans leading-relaxed">
+              
+              {/* 1. Calado Médio e Trim */}
+              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5">
+                <div className="flex items-center gap-2 text-blue-400 font-black text-sm uppercase mb-2">
+                  <MoveVertical size={16} />
+                  <span>1. Calado Médio (Tm) e Trim (t)</span>
+                </div>
+                <div className="space-y-2 font-mono text-xs text-slate-200">
+                  <p><strong className="text-amber-400">Calado Médio (Tm):</strong> Tm = (Calado_AV + Calado_AR) / 2</p>
+                  <p className="text-slate-400 pl-4">→ Média aritmética entre a marcação de calado na Proa (AV) e Popa (AR).</p>
+                  
+                  <p className="mt-2"><strong className="text-amber-400">Trim (t):</strong> Trim = Calado_AV - Calado_AR</p>
+                  <p className="text-slate-400 pl-4">→ Se t &gt; 0: Navio Abicado (Proa mais baixa).</p>
+                  <p className="text-slate-400 pl-4">→ Se t &lt; 0: Navio Derrabado (Popa mais baixa).</p>
+                  <p className="text-slate-400 pl-4">→ Se t = 0: Navio em Nível / Compassado.</p>
+                </div>
+              </div>
+
+              {/* 2. Deslocamento */}
+              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5">
+                <div className="flex items-center gap-2 text-indigo-400 font-black text-sm uppercase mb-2">
+                  <Gauge size={16} />
+                  <span>2. Cálculo do Deslocamento com Correção de Trim</span>
+                </div>
+                <p className="text-xs text-slate-300 mb-3">
+                  O deslocamento é calculado através da Tabela Hidrostática de 4 colunas do A140:
+                </p>
+                <div className="space-y-2 font-mono text-xs text-slate-200 bg-slate-900 p-3.5 rounded-xl border border-slate-800">
+                  <p>1. Busca-se o valor <strong className="text-amber-400">C</strong> (deslocamento base) e <strong className="text-amber-400">K</strong> (coluna ajustada ao trim) interpolando para o Calado Médio (Tm).</p>
+                  <p>2. Calcula-se o fator de inclinação: <strong className="text-amber-400">T = C - K</strong></p>
+                  <p>3. Calcula-se a Correção de Trim: <strong className="text-amber-400">S = T × Trim</strong></p>
+                  <p>4. Deslocamento Final: <strong className="text-emerald-400">Deslocamento = C + S</strong></p>
+                </div>
+              </div>
+
+              {/* 3. Variação da Densidade da Água */}
+              <div className="bg-amber-950/30 border border-amber-500/30 rounded-2xl p-4 sm:p-5">
+                <div className="flex items-center gap-2 text-amber-400 font-black text-sm uppercase mb-2">
+                  <Droplets size={16} />
+                  <span>3. Influência da Densidade da Água (Água Salgada vs. Água Doce)</span>
+                </div>
+                <div className="space-y-3 text-xs text-slate-300">
+                  <p>
+                    <strong>Densidade Padrão da Tabela Hidrostática:</strong> As tabelas hidrostáticas da Marinha são calibradas para <span className="text-amber-300 font-bold">Água Salgada (ρ = 1,025 t/m³)</span>.
+                  </p>
+                  <p>
+                    <strong>Em Água Doce (ρ = 1,000 t/m³):</strong> Como a água doce é 2,5% menos densa que a água salgada:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1.5 pl-2 font-mono text-slate-200">
+                    <li>
+                      <strong className="text-amber-400">No mesmo Calado Lido:</strong> O navio desloca a mesma quantidade de volume de água, mas a massa/peso flutuante real é <strong className="text-emerald-400">2,5% menor</strong>.
+                      <div className="text-[11px] text-slate-400 pl-4">Fórmula: Desloc_Doce = Desloc_Salgada × (1,000 / 1,025) ≈ Desloc_Salgada × 0,9756</div>
+                    </li>
+                    <li>
+                      <strong className="text-amber-400">Com o mesmo Peso de Carga:</strong> Para manter o mesmo peso em água doce, o navio precisa afundar mais (deslocar mais volume de água) gerando o chamado <strong className="text-emerald-400">Aumento por Água Doce (FWA - Fresh Water Allowance)</strong>:
+                      <div className="text-[11px] text-slate-400 pl-4">FWA (cm) = Deslocamento / (40 × TPC)</div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* 4. Altura Metacêntrica GM */}
+              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5">
+                <div className="flex items-center gap-2 text-emerald-400 font-black text-sm uppercase mb-2">
+                  <Anchor size={16} />
+                  <span>4. Altura Metacêntrica (GM)</span>
+                </div>
+                <p className="text-xs text-slate-300 mb-2">
+                  A altura metacêntrica inicial (GM) no A140 é obtida pela relação dos momentos metacêntricos da curva do navio:
+                </p>
+                <div className="space-y-2 font-mono text-xs text-slate-200 bg-slate-900 p-3.5 rounded-xl border border-slate-800">
+                  <p className="text-emerald-400 font-bold">GM = (V × Deslocamento) / u</p>
+                  <p className="text-slate-400 text-[11px]">Onde V e u são parâmetros característicos do A140:</p>
+                  <ul className="list-disc list-inside text-slate-300 text-[11px] pl-2 space-y-1">
+                    <li><strong>Estado Carregado (Deslocamento &gt; 20.000 t):</strong> V = 2.703 e u = 21.490 t</li>
+                    <li><strong>Estado Leve (Deslocamento ≤ 20.000 t):</strong> V = 2.561 e u = 17.718 t</li>
+                  </ul>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Rodapé do Modal */}
+            <div className="mt-6 pt-4 border-t border-slate-800 flex justify-end">
+              <button
+                onClick={() => setShowCalcModal(false)}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase rounded-xl transition-all shadow-lg"
+              >
+                Entendido / Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

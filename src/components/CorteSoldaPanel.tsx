@@ -228,7 +228,7 @@ const CorteSoldaPanel: React.FC<Props> = ({ list = [], onChange, readOnly = fals
                     ) : (
                       <Square className="w-5 h-5 text-slate-600 shrink-0" />
                     )}
-                    <span>( ) CORTE</span>
+                    <span>CORTE</span>
                   </button>
 
                   {/* SOLDA */}
@@ -247,7 +247,7 @@ const CorteSoldaPanel: React.FC<Props> = ({ list = [], onChange, readOnly = fals
                     ) : (
                       <Square className="w-5 h-5 text-slate-600 shrink-0" />
                     )}
-                    <span>( ) SOLDA</span>
+                    <span>SOLDA</span>
                   </button>
 
                   {/* AQUECIMENTO EM PEÇA */}
@@ -266,7 +266,7 @@ const CorteSoldaPanel: React.FC<Props> = ({ list = [], onChange, readOnly = fals
                     ) : (
                       <Square className="w-5 h-5 text-slate-600 shrink-0" />
                     )}
-                    <span>( ) AQUECIMENTO EM PEÇA</span>
+                    <span>AQUECIMENTO EM PEÇA</span>
                   </button>
                 </div>
               </div>
@@ -276,7 +276,7 @@ const CorteSoldaPanel: React.FC<Props> = ({ list = [], onChange, readOnly = fals
                 <div className="flex justify-between items-center mb-3">
                   <label className="text-[11px] sm:text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-2">
                     <UserCheck size={16} className="text-amber-400" />
-                    FIRE-BOY (SENTINELA DE INCÊNDIO):
+                    FIRE-BOY:
                   </label>
                   {!readOnly && (
                     <button

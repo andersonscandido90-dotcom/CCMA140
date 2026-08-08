@@ -134,10 +134,7 @@ const FuelPanel: React.FC<Props> = ({ fuel, onChange, fullWidth }) => {
                   <span className={`font-black uppercase tracking-widest text-[7px] sm:text-[10px] lg:text-xs ${percentage < 15 ? 'text-red-500 animate-pulse' : 'text-slate-500'}`}>
                     {percentage < 15 ? '⚠ CRÍTICO' : isFull ? 'LIMITE MÁXIMO' : 'OPERACIONAL'}
                   </span>
-                  <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500/50" />
-                    <span className="text-slate-600 font-black text-[7px] sm:text-[9px] uppercase tracking-widest">REAL-TIME VALIDATION</span>
-                  </div>
+
                 </div>
               </div>
             </div>

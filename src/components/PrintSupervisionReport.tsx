@@ -224,7 +224,7 @@ export default function PrintSupervisionReport({ report, onClose }: Props) {
                         <span className="font-bold text-gray-600">SERVIÇO:</span> {servicosList.length > 0 ? servicosList.join(' | ') : 'NENHUM SELECIONADO'}
                       </div>
                       <div>
-                        <span className="font-bold text-gray-600">FIRE-BOY (SENTINELAS):</span> {cs.fireBoys && cs.fireBoys.filter(fb => fb.trim()).length > 0 ? cs.fireBoys.filter(fb => fb.trim()).join(', ') : 'NENHUM INFORMADO'}
+                        <span className="font-bold text-gray-600">FIRE-BOY:</span> {cs.fireBoys && cs.fireBoys.filter(fb => fb.trim()).length > 0 ? cs.fireBoys.filter(fb => fb.trim()).join(', ') : 'NENHUM INFORMADO'}
                       </div>
                     </div>
                   );
