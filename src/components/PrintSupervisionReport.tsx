@@ -214,7 +214,7 @@ export default function PrintSupervisionReport({ report, onClose }: Props) {
                     <div key={cs.id || idx} className="p-3 rounded-lg border border-gray-200 bg-gray-50/50 break-inside-avoid text-xs font-mono text-gray-900 space-y-1.5">
                       <div className="flex justify-between items-center border-b border-gray-200 pb-1">
                         <span className="font-black text-sm text-gray-900">COMPARTIMENTO: {cs.compartimento || 'NÃO INFORMADO'}</span>
-                        <span className="font-bold text-[10px] text-amber-800 bg-amber-100 px-2 py-0.5 rounded uppercase">TRABALHO #{idx + 1}</span>
+                        <span className="font-bold text-[10px] text-amber-800 bg-amber-100 px-2 py-0.5 rounded uppercase">CORTE/SOLDA #{idx + 1}</span>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                         <div><span className="font-bold text-gray-600">SOLDADOR:</span> {cs.soldador || '-'}</div>

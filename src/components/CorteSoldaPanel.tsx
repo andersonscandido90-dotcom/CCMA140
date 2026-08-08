@@ -92,7 +92,7 @@ const CorteSoldaPanel: React.FC<Props> = ({ list = [], onChange, readOnly = fals
               CAV — Controle de Avarias
             </h3>
             <p className="text-amber-400 font-black uppercase text-[10px] sm:text-xs lg:text-sm tracking-widest mt-0.5 sm:mt-1">
-              Registro de Trabalhos a Quente (Corte / Solda / Aquecimento)
+              Registro de Corte/Solda
             </p>
           </div>
         </div>
@@ -122,7 +122,7 @@ const CorteSoldaPanel: React.FC<Props> = ({ list = [], onChange, readOnly = fals
               onClick={handleAddEntry}
               className="px-6 py-3 bg-amber-600 hover:bg-amber-500 text-white font-black text-xs uppercase rounded-xl transition-all flex items-center gap-2 shadow-md"
             >
-              <Plus size={16} /> Cadastrar Primeiro Trabalho a Quente
+              <Plus size={16} /> Cadastrar Primeiro Corte/Solda
             </button>
           )}
         </div>
@@ -136,7 +136,7 @@ const CorteSoldaPanel: React.FC<Props> = ({ list = [], onChange, readOnly = fals
               <div className="flex flex-wrap justify-between items-center gap-3 mb-6 pb-4 border-b border-slate-800">
                 <div className="flex items-center gap-3">
                   <span className="bg-amber-500/20 text-amber-400 font-black text-xs px-3 py-1 rounded-full uppercase border border-amber-500/30">
-                    Trabalho #{index + 1}
+                    corte/solda #{index + 1}
                   </span>
                   <h4 className="font-black text-white text-base sm:text-lg uppercase">
                     {item.compartimento ? item.compartimento : 'Novo Compartimento'}
@@ -168,7 +168,7 @@ const CorteSoldaPanel: React.FC<Props> = ({ list = [], onChange, readOnly = fals
                     disabled={readOnly}
                     value={item.compartimento}
                     onChange={(e) => handleUpdateEntry(item.id, { compartimento: e.target.value })}
-                    placeholder="Ex: Praça d'Águas C-102"
+                    placeholder="Ex: 6KA0 - CCM"
                     className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 font-mono font-bold text-sm text-white focus:border-amber-500 outline-none uppercase transition-all"
                   />
                 </div>
@@ -184,7 +184,7 @@ const CorteSoldaPanel: React.FC<Props> = ({ list = [], onChange, readOnly = fals
                     disabled={readOnly}
                     value={item.soldador}
                     onChange={(e) => handleUpdateEntry(item.id, { soldador: e.target.value })}
-                    placeholder="Ex: 3SG-MO SILVA"
+                    placeholder="Ex: 3SG-CI Candido"
                     className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 font-mono font-bold text-sm text-white focus:border-amber-500 outline-none uppercase transition-all"
                   />
                 </div>
