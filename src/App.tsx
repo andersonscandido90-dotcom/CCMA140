@@ -618,7 +618,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex bg-slate-950 text-slate-100 selection:bg-blue-600 relative overflow-x-hidden">
+    <div className={`min-h-screen flex bg-slate-950 text-slate-100 selection:bg-blue-600 relative overflow-x-hidden ${(showPrintView || showSupervisionPrintView) ? 'print:hidden' : ''}`}>
       {sidebarOpen && (
         <div 
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] lg:hidden animate-in fade-in duration-300"
@@ -752,7 +752,7 @@ const App: React.FC = () => {
       </main>
 
       {showPrintView && (
-        <div className="fixed inset-0 z-[200] overflow-y-auto bg-slate-950">
+        <div className="fixed inset-0 z-[200] overflow-y-auto bg-slate-950 print-modal-overlay print:static print:inset-auto print:overflow-visible print:bg-white print:p-0">
           <PrintReport 
             report={{
               date: selectedDate,
@@ -772,7 +772,7 @@ const App: React.FC = () => {
       )}
 
       {showSupervisionPrintView && (
-        <div className="fixed inset-0 z-[200] overflow-y-auto bg-slate-950">
+        <div className="fixed inset-0 z-[200] overflow-y-auto bg-slate-950 print-modal-overlay print:static print:inset-auto print:overflow-visible print:bg-white print:p-0">
           <PrintSupervisionReport 
             report={{
               date: selectedDate,

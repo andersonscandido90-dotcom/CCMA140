@@ -105,11 +105,26 @@ export default function PrintReport({ report, onClose }: Props) {
             background: #fff !important;
             color: #000 !important;
             font-size: 10px !important;
+            overflow: visible !important;
+            height: auto !important;
+            width: 100% !important;
+            position: static !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
           .no-print {
             display: none !important;
+          }
+          .print-modal-overlay {
+            position: static !important;
+            inset: auto !important;
+            overflow: visible !important;
+            background: #fff !important;
+            height: auto !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-shadow: none !important;
           }
           .print-container {
             width: 100% !important;
@@ -119,6 +134,8 @@ export default function PrintReport({ report, onClose }: Props) {
             box-shadow: none !important;
             border: none !important;
             border-radius: 0 !important;
+            height: auto !important;
+            overflow: visible !important;
           }
         }
       `}</style>
