@@ -1,5 +1,5 @@
 {
-  "name": "Sistema de Controle Naval",
+  "name": "Candido App CCM",
   "description": "Painel de controle de equipamentos, estabilidade, cargas, CAV, ISIS e quarto de serviço do navio.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
