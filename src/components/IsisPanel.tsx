@@ -28,7 +28,7 @@ const IsisPanel: React.FC<Props> = ({ overrides, onOverrideChange }) => {
           </div>
           <div>
             <h3 className="font-black text-white uppercase text-2xl lg:text-5xl tracking-tighter">ISIS</h3>
-            <p className="text-slate-500 font-bold uppercase text-[10px] lg:text-xs tracking-widest mt-1">Dicionário e Tradução de Alarmes</p>
+            <p className="text-slate-500 font-bold uppercase text-[10px] lg:text-xs tracking-widest mt-1">Tradução de Alarmes</p>
           </div>
         </div>
         

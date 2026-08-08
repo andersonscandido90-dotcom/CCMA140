@@ -186,7 +186,7 @@ const PersonnelView: React.FC<{
         <div className="space-y-6 sm:space-y-8">
           <h3 className="font-black flex items-center gap-4 text-white uppercase text-lg sm:text-xl lg:text-2xl mb-4 sm:mb-6">
             <Users className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
-            Escalas de Serviço
+            Quarto de Serviço do Dep Máquina
           </h3>
           {renderShiftList("Auxiliares de Serviço", data.auxiliares, "auxiliares", <Users size={18} />)}
           {renderShiftList("Patrulhas de Serviço", data.patrulha, "patrulha", <Shield size={18} />)}
