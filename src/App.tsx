@@ -617,8 +617,48 @@ const App: React.FC = () => {
     );
   }
 
+  if (showPrintView) {
+    return (
+      <PrintReport 
+        report={{
+          date: selectedDate,
+          equipment: equipmentData,
+          fuel: fuelData,
+          stability: stabilityData,
+          personnel: personnelData,
+          restrictionReasons,
+          eductorStatuses,
+          isisOverrides,
+          logs,
+          serviceNotes
+        }}
+        onClose={() => setShowPrintView(false)}
+      />
+    );
+  }
+
+  if (showSupervisionPrintView) {
+    return (
+      <PrintSupervisionReport 
+        report={{
+          date: selectedDate,
+          equipment: equipmentData,
+          fuel: fuelData,
+          stability: stabilityData,
+          personnel: personnelData,
+          restrictionReasons,
+          eductorStatuses,
+          isisOverrides,
+          logs,
+          serviceNotes
+        }}
+        onClose={() => setShowSupervisionPrintView(false)}
+      />
+    );
+  }
+
   return (
-    <div className={`min-h-screen flex bg-slate-950 text-slate-100 selection:bg-blue-600 relative overflow-x-hidden ${(showPrintView || showSupervisionPrintView) ? 'print:hidden' : ''}`}>
+    <div className="min-h-screen flex bg-slate-950 text-slate-100 selection:bg-blue-600 relative overflow-x-hidden">
       {sidebarOpen && (
         <div 
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] lg:hidden animate-in fade-in duration-300"
@@ -750,46 +790,6 @@ const App: React.FC = () => {
           {view === 'personnel' && <PersonnelView data={personnelData} onChange={(k, v) => saveData({ personnel: { ...personnelData, [k as keyof PersonnelData]: v } })} serviceNotes={serviceNotes} onServiceNotesChange={handleServiceNotesChange} />}
         </div>
       </main>
-
-      {showPrintView && (
-        <div className="fixed inset-0 z-[200] overflow-y-auto bg-slate-950 print-modal-overlay print:static print:inset-auto print:overflow-visible print:bg-white print:p-0">
-          <PrintReport 
-            report={{
-              date: selectedDate,
-              equipment: equipmentData,
-              fuel: fuelData,
-              stability: stabilityData,
-              personnel: personnelData,
-              restrictionReasons,
-              eductorStatuses,
-              isisOverrides,
-              logs,
-              serviceNotes
-            }}
-            onClose={() => setShowPrintView(false)}
-          />
-        </div>
-      )}
-
-      {showSupervisionPrintView && (
-        <div className="fixed inset-0 z-[200] overflow-y-auto bg-slate-950 print-modal-overlay print:static print:inset-auto print:overflow-visible print:bg-white print:p-0">
-          <PrintSupervisionReport 
-            report={{
-              date: selectedDate,
-              equipment: equipmentData,
-              fuel: fuelData,
-              stability: stabilityData,
-              personnel: personnelData,
-              restrictionReasons,
-              eductorStatuses,
-              isisOverrides,
-              logs,
-              serviceNotes
-            }}
-            onClose={() => setShowSupervisionPrintView(false)}
-          />
-        </div>
-      )}
 
       {showBackupModal && (
         <BackupManagerModal 

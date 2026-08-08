@@ -372,17 +372,6 @@ export default function PrintReport({ report, onClose }: Props) {
           </div>
         </div>
 
-        {/* 4. Anotações Oficiais */}
-        {report.serviceNotes && (
-          <div className="border border-gray-300 rounded-md p-2 mb-3">
-            <h3 className="font-black text-[9px] uppercase text-blue-900 border-b border-gray-200 pb-0.5 mb-1">
-              5. Anotações do Serviço
-            </h3>
-            <p className="text-[9px] font-mono whitespace-pre-wrap text-gray-800 leading-snug">
-              {report.serviceNotes}
-            </p>
-          </div>
-        )}
         </div>
 
         {/* Signatures pushed to footer without top divider line */}
