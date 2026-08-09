@@ -76,12 +76,47 @@ export interface CorteSoldaEntry {
   fireBoys: string[];
 }
 
+export interface HidrometroEntry {
+  id: string;
+  descricao: string;
+  inicio: number | '';
+  fim: number | '';
+}
+
+export interface TanqueAguadaEntry {
+  posicao: string;
+  tanque: string;
+  capacidadeMax: number;
+  sondagem: number | '';
+}
+
+export interface AguadaData {
+  sondagemAnterior: number | '';
+  hidrometros: HidrometroEntry[];
+  tanquesAtuais: TanqueAguadaEntry[];
+  tanqueEmConsumo?: string;
+  tanqueRecebendo?: string;
+  bagSvc: {
+    nivel: string;
+    sondagem: number | '';
+    observacoes: string;
+  };
+  tanqueSvc: {
+    nivel: string;
+    sondagem: number | '';
+    observacoes: string;
+  };
+  fielAguadaNome?: string;
+  observacoesGerais?: string;
+}
+
 export interface DailyReport {
   date: string;
   equipment: EquipmentData;
   fuel: FuelData;
   stability: StabilityData;
   personnel: PersonnelData;
+  aguada?: AguadaData;
   logs?: LogEntry[];
   serviceNotes?: string;
   restrictionReasons?: Record<string, string>;

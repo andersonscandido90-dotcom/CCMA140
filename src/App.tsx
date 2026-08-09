@@ -33,9 +33,11 @@ import CAVPanel from './components/CAVPanel';
 import CorteSoldaPanel from './components/CorteSoldaPanel';
 import RestrictionsPanel from './components/RestrictionsPanel';
 import IsisPanel from './components/IsisPanel';
+import AguadaPanel, { DEFAULT_AGUADA } from './components/AguadaPanel';
 import PrintReport from './components/PrintReport';
 import PrintSupervisionReport from './components/PrintSupervisionReport';
 import BackupManagerModal from './components/BackupManagerModal';
+import { AguadaData } from './types';
 
 const DEFAULT_FUEL: FuelData = { 
   water: 0, lubOil: 0, fuelOil: 0, jp5: 0,
@@ -263,6 +265,7 @@ const initializeAppData = () => {
       fuel: DEFAULT_FUEL,
       stability: DEFAULT_STABILITY,
       personnel: DEFAULT_PERSONNEL,
+      aguada: DEFAULT_AGUADA,
       restrictionReasons: {},
       eductorStatuses: {},
       isisOverrides: {},
@@ -278,6 +281,9 @@ const initializeAppData = () => {
     if (!report.corteSoldaList) {
       report.corteSoldaList = [];
     }
+    if (!report.aguada) {
+      report.aguada = DEFAULT_AGUADA;
+    }
   }
 
   return { savedDate, report };
@@ -291,13 +297,14 @@ const App: React.FC = () => {
   const [fuelData, setFuelData] = useState<FuelData>(initialReport.fuel);
   const [stabilityData, setStabilityData] = useState<StabilityData>(initialReport.stability);
   const [personnelData, setPersonnelData] = useState<PersonnelData>(initialReport.personnel);
+  const [aguadaData, setAguadaData] = useState<AguadaData>(initialReport.aguada || DEFAULT_AGUADA);
   const [restrictionReasons, setRestrictionReasons] = useState<Record<string, string>>(initialReport.restrictionReasons);
   const [eductorStatuses, setEductorStatuses] = useState<Record<string, boolean>>(initialReport.eductorStatuses);
   const [isisOverrides, setIsisOverrides] = useState<Record<string, string>>(initialReport.isisOverrides);
   const [corteSoldaList, setCorteSoldaList] = useState<CorteSoldaEntry[]>(initialReport.corteSoldaList || []);
   const [logs, setLogs] = useState<LogEntry[]>(initialReport.logs);
   const [serviceNotes, setServiceNotes] = useState<string>(initialReport.serviceNotes || '');
-  const [view, setView] = useState<'menu-inicial' | 'equipment' | 'fuel' | 'stability' | 'personnel' | 'tv-mode' | 'eductors' | 'cav' | 'restrictions' | 'isis'>('menu-inicial');
+  const [view, setView] = useState<'menu-inicial' | 'equipment' | 'fuel' | 'stability' | 'personnel' | 'tv-mode' | 'eductors' | 'cav' | 'restrictions' | 'isis' | 'aguada'>('menu-inicial');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentTvSlide, setCurrentTvSlide] = useState(0);
   const [customLogo, setCustomLogo] = useState<string | null>(localStorage.getItem('custom_ship_logo'));
@@ -312,6 +319,7 @@ const App: React.FC = () => {
     { id: 'equipment', icon: <Activity size={18} />, label: 'Equipamentos' },
     { id: 'restrictions', icon: <ClipboardList size={18} />, label: 'Restrições' },
     { id: 'fuel', icon: <Droplets size={18} />, label: 'Cargas' },
+    { id: 'aguada', icon: <Droplets size={18} />, label: 'Aguada' },
     { id: 'stability', icon: <Compass size={18} />, label: 'Estabilidade' },
     { id: 'eductors', icon: <Waves size={18} />, label: 'Edutores' },
     { id: 'cav', icon: <Flame size={18} />, label: 'CAV' },
@@ -343,6 +351,7 @@ const App: React.FC = () => {
         setFuelData(data.fuel);
         setStabilityData(data.stability);
         setPersonnelData(data.personnel || DEFAULT_PERSONNEL);
+        setAguadaData(data.aguada || DEFAULT_AGUADA);
         setRestrictionReasons(data.restrictionReasons || {});
         setEductorStatuses(data.eductorStatuses || {});
         setIsisOverrides(data.isisOverrides || {});
@@ -356,6 +365,7 @@ const App: React.FC = () => {
       setFuelData(DEFAULT_FUEL);
       setStabilityData(DEFAULT_STABILITY);
       setPersonnelData(DEFAULT_PERSONNEL);
+      setAguadaData(DEFAULT_AGUADA);
       setRestrictionReasons({});
       setEductorStatuses({});
       setIsisOverrides({});
@@ -373,6 +383,7 @@ const App: React.FC = () => {
       fuel: fuelData,
       stability: stabilityData,
       personnel: personnelData,
+      aguada: aguadaData,
       restrictionReasons,
       eductorStatuses,
       isisOverrides,
@@ -385,10 +396,37 @@ const App: React.FC = () => {
   };
 
   const saveData = (updates: Partial<DailyReport>) => {
-    if (updates.equipment) setEquipmentData(updates.equipment);
-    if (updates.fuel) setFuelData(updates.fuel);
+    let nextEquipment = updates.equipment !== undefined ? updates.equipment : equipmentData;
+    let nextFuel = updates.fuel !== undefined ? updates.fuel : fuelData;
+    let nextAguada = updates.aguada !== undefined ? updates.aguada : aguadaData;
+
+    // Sincronização 1: Atualizar Cargas (Aba Fuel -> water) com o valor da Sondagem Atual (C) do Aguada
+    if (updates.aguada && updates.aguada.tanquesAtuais) {
+      const totalC = updates.aguada.tanquesAtuais.reduce((sum, t) => sum + (typeof t.sondagem === 'number' ? t.sondagem : 0), 0);
+      nextFuel = { ...nextFuel, water: totalC };
+    }
+
+    // Sincronização 2: Atualizar BAG de serviço na aba Aguada quando o status dos Equipamentos mudar
+    if (updates.equipment) {
+      const activeBags = ['BAG 1', 'BAG 2', 'BAG 3', 'BAG 4'].filter(bag => {
+        const st = updates.equipment![bag];
+        return st === EquipmentStatus.IN_SERVICE || st === EquipmentStatus.IN_LINE;
+      });
+      const activeBagsStr = activeBags.length > 0 ? activeBags.join(', ') + ' (EM SERVIÇO / NA LINHA)' : 'NENHUMA BAG EM SERVIÇO';
+      nextAguada = {
+        ...nextAguada,
+        bagSvc: {
+          ...nextAguada.bagSvc,
+          nivel: activeBagsStr
+        }
+      };
+    }
+
+    if (updates.equipment) setEquipmentData(nextEquipment);
+    if (updates.fuel || updates.aguada) setFuelData(nextFuel);
     if (updates.stability) setStabilityData(updates.stability);
     if (updates.personnel) setPersonnelData(updates.personnel);
+    if (updates.aguada || updates.equipment) setAguadaData(nextAguada);
     if (updates.restrictionReasons) setRestrictionReasons(updates.restrictionReasons);
     if (updates.eductorStatuses) setEductorStatuses(updates.eductorStatuses);
     if (updates.corteSoldaList) setCorteSoldaList(updates.corteSoldaList);
@@ -404,10 +442,11 @@ const App: React.FC = () => {
 
     const report: DailyReport = {
       date: selectedDate,
-      equipment: updates.equipment !== undefined ? updates.equipment : equipmentData,
-      fuel: updates.fuel !== undefined ? updates.fuel : fuelData,
+      equipment: nextEquipment,
+      fuel: nextFuel,
       stability: updates.stability !== undefined ? updates.stability : stabilityData,
       personnel: updates.personnel !== undefined ? updates.personnel : personnelData,
+      aguada: nextAguada,
       restrictionReasons: updates.restrictionReasons !== undefined ? updates.restrictionReasons : restrictionReasons,
       eductorStatuses: updates.eductorStatuses !== undefined ? updates.eductorStatuses : eductorStatuses,
       isisOverrides: updates.isisOverrides !== undefined ? updates.isisOverrides : isisOverrides,
@@ -574,6 +613,7 @@ const App: React.FC = () => {
     const TV_SLIDES = [
       { id: 'equipment', label: 'Equipamentos' },
       { id: 'fuel', label: 'Cargas' },
+      { id: 'aguada', label: 'Aguada' },
       { id: 'stability', label: 'Estabilidade' },
       { id: 'eductors', label: 'Edutores' },
       { id: 'cav', label: 'CAV' },
@@ -602,11 +642,12 @@ const App: React.FC = () => {
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 lg:p-10 custom-scrollbar">
           {currentTvSlide === 0 && <EquipmentSection categories={CATEGORIES} data={equipmentData} onStatusChange={handleStatusChange} />}
           {currentTvSlide === 1 && <FuelPanel fuel={fuelData} fullWidth onChange={(k, v) => saveData({ fuel: {...fuelData, [k]: v}})} />}
-          {currentTvSlide === 2 && <StabilityPanel fuelData={fuelData} data={stabilityData} onChange={(k, v) => saveData({ stability: {...stabilityData, [k]: v}})} />}
-          {currentTvSlide === 3 && <CAVPanel eductorStatuses={eductorStatuses} onStatusToggle={handleEductorToggle} />}
-          {currentTvSlide === 4 && <CorteSoldaPanel list={corteSoldaList} onChange={(list) => saveData({ corteSoldaList: list })} readOnly />}
-          {currentTvSlide === 5 && <IsisPanel overrides={isisOverrides} onOverrideChange={handleIsisOverride} />}
-          {currentTvSlide === 6 && (
+          {currentTvSlide === 2 && <AguadaPanel data={aguadaData} equipmentData={equipmentData} onChange={(data) => saveData({ aguada: data })} shipName={SHIP_CONFIG.name} selectedDate={formattedSelectedDate} />}
+          {currentTvSlide === 3 && <StabilityPanel fuelData={fuelData} data={stabilityData} onChange={(k, v) => saveData({ stability: {...stabilityData, [k]: v}})} />}
+          {currentTvSlide === 4 && <CAVPanel eductorStatuses={eductorStatuses} onStatusToggle={handleEductorToggle} />}
+          {currentTvSlide === 5 && <CorteSoldaPanel list={corteSoldaList} onChange={(list) => saveData({ corteSoldaList: list })} readOnly />}
+          {currentTvSlide === 6 && <IsisPanel overrides={isisOverrides} onOverrideChange={handleIsisOverride} />}
+          {currentTvSlide === 7 && (
             <PersonnelView 
               data={personnelData} 
               onChange={(k, v) => saveData({ personnel: { ...personnelData, [k as keyof PersonnelData]: v } })} 
@@ -796,6 +837,15 @@ const App: React.FC = () => {
           )}
           {view === 'equipment' && <EquipmentSection categories={CATEGORIES} data={equipmentData} onStatusChange={handleStatusChange} />}
           {view === 'fuel' && <FuelPanel fuel={fuelData} fullWidth onChange={(k, v) => saveData({ fuel: {...fuelData, [k]: v}})} />}
+          {view === 'aguada' && (
+            <AguadaPanel 
+              data={aguadaData} 
+              equipmentData={equipmentData}
+              onChange={(data) => saveData({ aguada: data })} 
+              shipName={SHIP_CONFIG.name}
+              selectedDate={formattedSelectedDate}
+            />
+          )}
           {view === 'stability' && <StabilityPanel fuelData={fuelData} data={stabilityData} onChange={(k, v) => saveData({ stability: {...stabilityData, [k]: v}})} />}
           {view === 'eductors' && <CAVPanel eductorStatuses={eductorStatuses} onStatusToggle={handleEductorToggle} />}
           {view === 'cav' && <CorteSoldaPanel list={corteSoldaList} onChange={(list) => saveData({ corteSoldaList: list })} />}
