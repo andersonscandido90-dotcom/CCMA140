@@ -17,6 +17,31 @@ import {
   Zap
 } from 'lucide-react';
 import { AguadaData, HidrometroEntry, TanqueAguadaEntry, EquipmentData, EquipmentStatus, PersonnelData } from '../types';
+import { SHIP_CONFIG } from '../constants';
+
+function ShipLogo({ className = "w-12 h-12" }: { className?: string }) {
+  const [imgError, setImgError] = useState(false);
+
+  if (imgError || !SHIP_CONFIG.badgeUrl) {
+    return (
+      <div className={`${className} rounded-full border-2 border-black flex items-center justify-center p-1 bg-white shrink-0`}>
+        <svg className="w-8 h-8 text-black fill-current" viewBox="0 0 24 24">
+          <path d="M12 2a2 2 0 0 1 2 2v2.07A6 6 0 0 1 19.93 11H22v2h-2.07A8.002 8.002 0 0 1 13 19.93V22h-2v-2.07A8.002 8.002 0 0 1 4.07 13H2v-2h2.07A6 6 0 0 1 10 6.07V4a2 2 0 0 1 2-2zm0 6a4 4 0 0 0-3.995 3.8L8 12a4 4 0 0 0 8 0 4 4 0 0 0-4-4zm0 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/>
+        </svg>
+      </div>
+    );
+  }
+
+  return (
+    <img 
+      src={SHIP_CONFIG.badgeUrl} 
+      alt="Brasão do Navio" 
+      referrerPolicy="no-referrer"
+      className={`${className} object-contain shrink-0 print:block`} 
+      onError={() => setImgError(true)}
+    />
+  );
+}
 
 // Capacidades e posições fixas oficiais do navio
 export const FIXED_TANKS: TanqueAguadaEntry[] = [
@@ -910,14 +935,24 @@ export default function AguadaPanel({
             ref={printSheetRef}
             className="max-w-4xl mx-auto w-full bg-white text-black p-8 sm:p-10 rounded-xl shadow-2xl font-sans text-xs border border-gray-200 aguada-print-sheet"
           >
-            {/* Cabeçalho Oficial */}
-            <div className="text-center border-b-2 border-black pb-4 mb-6">
-              <h1 className="font-black text-lg sm:text-xl uppercase tracking-tight text-black">
-                PAPELETA PARA SERVIÇO DE FIEL DA AGUADA NO PORTO
-              </h1>
-              <div className="flex justify-between items-center text-xs font-bold text-gray-700 mt-2 px-2">
-                <span>NAVIO: {shipName}</span>
-                <span>DATA: {selectedDate || new Date().toLocaleDateString('pt-BR')}</span>
+            {/* Cabeçalho Oficial com Logo / Brasão */}
+            <div className="border-b-2 border-black pb-3 mb-5 flex justify-between items-center gap-4">
+              <div className="flex items-center gap-3">
+                <ShipLogo className="w-14 h-14" />
+                <div>
+                  <h2 className="font-black text-xs uppercase tracking-widest text-black">MARINHA DO BRASIL</h2>
+                  <h3 className="font-bold text-xs uppercase text-black">{shipName} ({SHIP_CONFIG.hullNumber})</h3>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <h1 className="font-black text-sm sm:text-base uppercase tracking-tight text-black leading-tight">
+                  PAPELETA PARA SERVIÇO DE FIEL DA AGUADA NO PORTO
+                </h1>
+                <div className="flex justify-end gap-4 text-xs font-bold text-gray-800 mt-1">
+                  <span>NAVIO: {shipName}</span>
+                  <span>DATA: {selectedDate || new Date().toLocaleDateString('pt-BR')}</span>
+                </div>
               </div>
             </div>
 
