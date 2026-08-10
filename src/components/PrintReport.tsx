@@ -84,6 +84,22 @@ export default function PrintReport({ report, onClose }: Props) {
     ? report.stability.displacement 
     : currentDisplacement;
 
+  // Cálculos da Aguada para o Relatório Impresso
+  const aguada = report.aguada;
+  const valA = aguada && typeof aguada.sondagemAnterior === 'number' ? aguada.sondagemAnterior : 0;
+  const totalRecebido = aguada?.hidrometros ? aguada.hidrometros.reduce((acc, item) => {
+    const inicio = typeof item.inicio === 'number' ? item.inicio : 0;
+    const fim = typeof item.fim === 'number' ? item.fim : 0;
+    return acc + (fim >= inicio ? fim - inicio : 0);
+  }, 0) : 0;
+  const totalSondagemAtual = aguada?.tanquesAtuais ? aguada.tanquesAtuais.reduce((acc, item) => {
+    return acc + (typeof item.sondagem === 'number' ? item.sondagem : 0);
+  }, 0) : 0;
+  const totalConsumo = (valA + totalRecebido) - totalSondagemAtual;
+  const tanqueServico = (aguada?.tanqueEmConsumo && aguada.tanqueEmConsumo !== 'NENHUM')
+    ? aguada.tanqueEmConsumo
+    : (aguada?.tanqueSvc?.nivel || 'NENHUM');
+
   const triggerPrint = () => {
     try {
       window.print();
@@ -248,28 +264,24 @@ export default function PrintReport({ report, onClose }: Props) {
 
           <div className="border border-gray-300 rounded-md p-2.5">
             <h3 className="font-black text-[10px] uppercase text-blue-900 border-b border-gray-200 pb-1 mb-1.5">
-              2. Parâmetros de Estabilidade
+              2. Aguada
             </h3>
             <div className="grid grid-cols-2 gap-2 text-[10px] font-mono leading-tight">
-              <div>
-                <span className="text-gray-500 block text-[8px] font-bold uppercase">Calado AV</span>
-                <span className="font-bold">{report.stability.draftForward} m</span>
+              <div className="col-span-2">
+                <span className="text-gray-500 block text-[8px] font-bold uppercase">Tanque de Serviço (Em Consumo)</span>
+                <span className="font-bold text-blue-950 uppercase">{tanqueServico}</span>
               </div>
               <div>
-                <span className="text-gray-500 block text-[8px] font-bold uppercase">Calado AR</span>
-                <span className="font-bold">{report.stability.draftAft} m</span>
+                <span className="text-gray-500 block text-[8px] font-bold uppercase">Água Recebida (B)</span>
+                <span className="font-bold">{totalRecebido.toFixed(1)} m³</span>
               </div>
               <div>
-                <span className="text-gray-500 block text-[8px] font-bold uppercase">Banda</span>
-                <span className="font-bold">{report.stability.heel}°</span>
+                <span className="text-gray-500 block text-[8px] font-bold uppercase">Consumo do Dia</span>
+                <span className="font-bold">{totalConsumo.toFixed(1)} m³</span>
               </div>
-              <div>
-                <span className="text-gray-500 block text-[8px] font-bold uppercase">GM (Metacentro)</span>
-                <span className="font-bold">{report.stability.gm} m</span>
-              </div>
-              <div className="col-span-2 border-t border-gray-100 pt-1 mt-0.5">
-                <span className="text-gray-500 block text-[8px] font-bold uppercase">Deslocamento</span>
-                <span className="font-bold">{displayDisplacement.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} Ton</span>
+              <div className="col-span-2 border-t border-gray-100 pt-1 mt-0.5 flex justify-between items-center">
+                <span className="text-gray-500 text-[8px] font-bold uppercase">Sondagem Total Atual (C):</span>
+                <span className="font-bold text-blue-900">{totalSondagemAtual.toFixed(1)} m³</span>
               </div>
             </div>
           </div>

@@ -930,8 +930,7 @@ export default function AguadaPanel({
                   BAG DE SERVIÇO
                 </span>
                 <div className="space-y-1 font-mono text-xs">
-                  <div><span className="font-bold">Nível/Status:</span> {currentData.bagSvc.nivel || '---'}</div>
-                  <div><span className="font-bold">Sondagem:</span> {typeof currentData.bagSvc.sondagem === 'number' ? `${currentData.bagSvc.sondagem} m³` : '---'}</div>
+                  <div><span className="font-bold">BAG em Serviço:</span> {currentData.bagSvc.nivel || 'NENHUMA'}</div>
                 </div>
               </div>
 
@@ -957,18 +956,15 @@ export default function AguadaPanel({
             <div className="pt-8 grid grid-cols-3 gap-4 text-center text-xs uppercase font-black">
               <div>
                 <div className="border-b-2 border-black mb-2 w-4/5 mx-auto"></div>
-                <span>{currentData.fielAguadaNome || 'FIEL DA AGUADA'}</span>
-                <span className="block text-[9px] font-normal text-gray-600">FIEL DA AGUADA DE SERVIÇO</span>
+                <span className="font-black">FIEL DA AGUADA</span>
               </div>
               <div>
                 <div className="border-b-2 border-black mb-2 w-4/5 mx-auto"></div>
-                <span>CHEFE DE QUARTO</span>
-                <span className="block text-[9px] font-normal text-gray-600">CHEFE DE QUARTO</span>
+                <span className="font-black">CHEFE DE QUARTO</span>
               </div>
               <div>
                 <div className="border-b-2 border-black mb-2 w-4/5 mx-auto"></div>
-                <span>OFICIAL DE SERVIÇO</span>
-                <span className="block text-[9px] font-normal text-gray-600">OFICIAL DE SERVIÇO</span>
+                <span className="font-black">OFICIAL DE SERVIÇO</span>
               </div>
             </div>
           </div>
