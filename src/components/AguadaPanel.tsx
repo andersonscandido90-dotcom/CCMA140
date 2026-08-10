@@ -834,49 +834,44 @@ export default function AguadaPanel({
       {showPrintModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex flex-col justify-between p-2 sm:p-6 overflow-y-auto aguada-print-modal">
           <style>{`
+            @page {
+              size: A4 portrait;
+              margin: 8mm 10mm;
+            }
             @media print {
-              body * {
-                visibility: hidden;
-              }
-              .aguada-print-modal, .aguada-print-modal * {
-                visibility: visible;
-              }
               html, body {
-                background: #fff !important;
-                color: #000 !important;
+                background: #ffffff !important;
+                color: #000000 !important;
                 overflow: visible !important;
                 height: auto !important;
                 width: 100% !important;
-                position: static !important;
+                margin: 0 !important;
+                padding: 0 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
               }
-              .no-print {
-                display: none !important;
+              body * {
+                visibility: hidden !important;
               }
-              .aguada-print-modal {
-                position: static !important;
-                inset: auto !important;
-                overflow: visible !important;
-                background: #fff !important;
-                height: auto !important;
-                width: 100% !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                box-shadow: none !important;
-                backdrop-filter: none !important;
+              .aguada-print-sheet, .aguada-print-sheet * {
+                visibility: visible !important;
               }
               .aguada-print-sheet {
-                position: static !important;
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
                 width: 100% !important;
                 max-width: 100% !important;
                 margin: 0 !important;
                 padding: 0 !important;
-                box-shadow: none !important;
                 border: none !important;
                 border-radius: 0 !important;
-                height: auto !important;
-                overflow: visible !important;
+                box-shadow: none !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+              }
+              .no-print {
+                display: none !important;
               }
             }
           `}</style>
