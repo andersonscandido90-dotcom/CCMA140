@@ -650,7 +650,7 @@ const App: React.FC = () => {
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 lg:p-10 custom-scrollbar">
           {currentTvSlide === 0 && <EquipmentSection categories={CATEGORIES} data={equipmentData} onStatusChange={handleStatusChange} />}
           {currentTvSlide === 1 && <FuelPanel fuel={fuelData} fullWidth onChange={(k, v) => saveData({ fuel: {...fuelData, [k]: v}})} />}
-          {currentTvSlide === 2 && <AguadaPanel data={aguadaData} equipmentData={equipmentData} personnelData={personnelData} onChange={(data) => saveData({ aguada: data })} shipName={SHIP_CONFIG.name} selectedDate={formattedSelectedDate} />}
+          {currentTvSlide === 2 && <AguadaPanel data={aguadaData} equipmentData={equipmentData} personnelData={personnelData} onChange={(data) => saveData({ aguada: data })} shipName={SHIP_CONFIG.name} selectedDate={formattedSelectedDate} rawSelectedDate={selectedDate} />}
           {currentTvSlide === 3 && <StabilityPanel fuelData={fuelData} data={stabilityData} onChange={(k, v) => saveData({ stability: {...stabilityData, [k]: v}})} />}
           {currentTvSlide === 4 && <CAVPanel eductorStatuses={eductorStatuses} onStatusToggle={handleEductorToggle} />}
           {currentTvSlide === 5 && <CorteSoldaPanel list={corteSoldaList} onChange={(list) => saveData({ corteSoldaList: list })} readOnly />}
@@ -855,6 +855,7 @@ const App: React.FC = () => {
               onChange={(data) => saveData({ aguada: data })} 
               shipName={SHIP_CONFIG.name}
               selectedDate={formattedSelectedDate}
+              rawSelectedDate={selectedDate}
             />
           )}
           {view === 'stability' && <StabilityPanel fuelData={fuelData} data={stabilityData} onChange={(k, v) => saveData({ stability: {...stabilityData, [k]: v}})} />}

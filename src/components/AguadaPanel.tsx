@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   Droplets, 
   Calculator, 
@@ -56,6 +56,7 @@ interface AguadaPanelProps {
   personnelData?: PersonnelData;
   shipName?: string;
   selectedDate?: string;
+  rawSelectedDate?: string;
 }
 
 export default function AguadaPanel({ 
@@ -64,7 +65,8 @@ export default function AguadaPanel({
   equipmentData, 
   personnelData,
   shipName = 'NAVIO', 
-  selectedDate = '' 
+  selectedDate = '',
+  rawSelectedDate = ''
 }: AguadaPanelProps) {
   const [showPrintModal, setShowPrintModal] = useState(false);
   const printSheetRef = useRef<HTMLDivElement>(null);
@@ -131,6 +133,57 @@ export default function AguadaPanel({
       });
     }
   }, [patrulha1620]);
+
+  // Buscar informação da sondagem de água do dia anterior
+  const prevDayInfo = useMemo(() => {
+    try {
+      const allKeys = Object.keys(localStorage)
+        .filter(k => k.startsWith('report_'))
+        .map(k => k.replace('report_', ''))
+        .filter(d => rawSelectedDate ? d < rawSelectedDate : true)
+        .sort()
+        .reverse();
+
+      for (const prevDate of allKeys) {
+        if (rawSelectedDate && prevDate >= rawSelectedDate) continue;
+        const prevDataStr = localStorage.getItem(`report_${prevDate}`);
+        if (prevDataStr) {
+          const parsed = JSON.parse(prevDataStr);
+          let vol = 0;
+          if (parsed.aguada?.tanquesAtuais && parsed.aguada.tanquesAtuais.length > 0) {
+            vol = parsed.aguada.tanquesAtuais.reduce((acc: number, item: any) => {
+              return acc + (typeof item.sondagem === 'number' ? item.sondagem : 0);
+            }, 0);
+          }
+          if (vol === 0 && typeof parsed.aguada?.sondagemAnterior === 'number') {
+            vol = parsed.aguada.sondagemAnterior;
+          }
+          if (vol > 0) {
+            const parts = prevDate.split('-');
+            const formatted = parts.length === 3 ? `${parts[2]}/${parts[1]}` : prevDate;
+            return {
+              date: prevDate,
+              formattedDate: formatted,
+              volume: vol
+            };
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Erro ao buscar dia anterior:', e);
+    }
+    return null;
+  }, [rawSelectedDate]);
+
+  // Pré-preencher automaticamente Sondagem Anterior (A) se estiver vazia ou 0
+  useEffect(() => {
+    if (prevDayInfo && (currentData.sondagemAnterior === '' || currentData.sondagemAnterior === 0)) {
+      onChange({
+        ...currentData,
+        sondagemAnterior: prevDayInfo.volume
+      });
+    }
+  }, [prevDayInfo, currentData.sondagemAnterior]);
 
   // Cálculos de Totais
   const valA = typeof currentData.sondagemAnterior === 'number' ? currentData.sondagemAnterior : 0;
@@ -424,9 +477,22 @@ export default function AguadaPanel({
 
             <div className="flex items-center gap-3">
               <div className="flex-1">
-                <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">
-                  Volume em m³ (Sondagem Anterior)
-                </label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400 block">
+                    Volume em m³ (Sondagem Anterior)
+                  </label>
+                  {prevDayInfo && (
+                    <button
+                      type="button"
+                      onClick={() => updateField({ sondagemAnterior: prevDayInfo.volume })}
+                      className="text-[9px] font-bold text-amber-400 hover:text-amber-300 uppercase tracking-wider bg-amber-950/60 border border-amber-800/60 px-2 py-0.5 rounded-md flex items-center gap-1 transition-all"
+                      title="Clique para recarregar o valor do dia anterior"
+                    >
+                      <RefreshCw size={10} />
+                      <span>Pré-preenchido ({prevDayInfo.formattedDate}: {prevDayInfo.volume} m³)</span>
+                    </button>
+                  )}
+                </div>
                 <input
                   type="number"
                   step="0.1"
