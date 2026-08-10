@@ -832,7 +832,54 @@ export default function AguadaPanel({
 
       {/* MODAL / VISUALIZAÇÃO DE IMPRESSÃO DA PAPELETA */}
       {showPrintModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex flex-col justify-between p-2 sm:p-6 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex flex-col justify-between p-2 sm:p-6 overflow-y-auto aguada-print-modal">
+          <style>{`
+            @media print {
+              body * {
+                visibility: hidden;
+              }
+              .aguada-print-modal, .aguada-print-modal * {
+                visibility: visible;
+              }
+              html, body {
+                background: #fff !important;
+                color: #000 !important;
+                overflow: visible !important;
+                height: auto !important;
+                width: 100% !important;
+                position: static !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+              .no-print {
+                display: none !important;
+              }
+              .aguada-print-modal {
+                position: static !important;
+                inset: auto !important;
+                overflow: visible !important;
+                background: #fff !important;
+                height: auto !important;
+                width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                backdrop-filter: none !important;
+              }
+              .aguada-print-sheet {
+                position: static !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                border-radius: 0 !important;
+                height: auto !important;
+                overflow: visible !important;
+              }
+            }
+          `}</style>
           {/* Barra Superior de Controle */}
           <div className="max-w-4xl mx-auto w-full mb-4 flex justify-between items-center bg-slate-950 p-4 rounded-2xl border border-slate-800 no-print">
             <div className="flex items-center gap-3">
@@ -866,7 +913,7 @@ export default function AguadaPanel({
           {/* Folha de Impressão (Design Fiel à Papeleta de Serviço) */}
           <div
             ref={printSheetRef}
-            className="max-w-4xl mx-auto w-full bg-white text-black p-8 sm:p-10 rounded-xl shadow-2xl font-sans text-xs border border-gray-200"
+            className="max-w-4xl mx-auto w-full bg-white text-black p-8 sm:p-10 rounded-xl shadow-2xl font-sans text-xs border border-gray-200 aguada-print-sheet"
           >
             {/* Cabeçalho Oficial */}
             <div className="text-center border-b-2 border-black pb-4 mb-6">
