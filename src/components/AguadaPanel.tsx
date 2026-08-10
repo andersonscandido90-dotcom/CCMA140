@@ -16,7 +16,7 @@ import {
   Flame,
   Zap
 } from 'lucide-react';
-import { AguadaData, HidrometroEntry, TanqueAguadaEntry, EquipmentData, EquipmentStatus } from '../types';
+import { AguadaData, HidrometroEntry, TanqueAguadaEntry, EquipmentData, EquipmentStatus, PersonnelData } from '../types';
 
 // Capacidades e posições fixas oficiais do navio
 export const FIXED_TANKS: TanqueAguadaEntry[] = [
@@ -53,6 +53,7 @@ interface AguadaPanelProps {
   data?: AguadaData;
   onChange: (data: AguadaData) => void;
   equipmentData?: EquipmentData;
+  personnelData?: PersonnelData;
   shipName?: string;
   selectedDate?: string;
 }
@@ -61,6 +62,7 @@ export default function AguadaPanel({
   data = DEFAULT_AGUADA, 
   onChange, 
   equipmentData, 
+  personnelData,
   shipName = 'NAVIO', 
   selectedDate = '' 
 }: AguadaPanelProps) {
@@ -116,6 +118,19 @@ export default function AguadaPanel({
       }
     }
   }, [equipmentData]);
+
+  // Identificar militar de Patrulha no quarto de serviço 16:00 às 20:00 para o Fiel da Aguada
+  const patrulha1620 = personnelData?.patrulha?.[2] || '';
+
+  // Sincronizar Fiel da Aguada automaticamente com o militar de 16:00 às 20:00 da Patrulha
+  useEffect(() => {
+    if (patrulha1620 && currentData.fielAguadaNome !== patrulha1620) {
+      onChange({
+        ...currentData,
+        fielAguadaNome: patrulha1620
+      });
+    }
+  }, [patrulha1620]);
 
   // Cálculos de Totais
   const valA = typeof currentData.sondagemAnterior === 'number' ? currentData.sondagemAnterior : 0;
@@ -682,17 +697,6 @@ export default function AguadaPanel({
                     className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs font-bold text-white focus:border-blue-500 outline-none"
                   />
                 </div>
-                <div>
-                  <label className="text-[10px] font-bold text-slate-400 block mb-1 uppercase">Sondagem / Volume (m³)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={currentData.bagSvc.sondagem}
-                    onChange={(e) => updateField({ bagSvc: { ...currentData.bagSvc, sondagem: e.target.value === '' ? '' : parseFloat(e.target.value) || 0 } })}
-                    placeholder="0.0"
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs font-bold text-white focus:border-blue-500 outline-none"
-                  />
-                </div>
               </div>
 
               {/* TANQUE DE SERVIÇO */}
@@ -735,9 +739,16 @@ export default function AguadaPanel({
 
             {/* Fiel da Aguada / Responsável */}
             <div className="pt-2">
-              <label className="text-[10px] font-bold text-slate-400 block mb-1 uppercase">
-                Nome do Fiel da Aguada
-              </label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-[10px] font-bold text-slate-400 block uppercase">
+                  Nome do Fiel da Aguada
+                </label>
+                {patrulha1620 && (
+                  <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded-md">
+                    Sincronizado c/ Patrulha (16:00 às 20:00)
+                  </span>
+                )}
+              </div>
               <div className="relative">
                 <input
                   type="text"
