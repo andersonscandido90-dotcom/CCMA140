@@ -631,23 +631,7 @@ const App: React.FC = () => {
 
     return (
       <div className="fixed inset-0 bg-slate-950 text-white flex flex-col overflow-hidden z-[100]">
-        <div className="bg-slate-900 border-b-4 border-blue-600 p-4 sm:p-6 lg:p-8 flex justify-between items-center shrink-0">
-          <div className="flex items-center gap-4 sm:gap-8">
-            <ShipLogo className="h-14 sm:h-20 lg:h-24 w-auto" customUrl={customLogo} />
-            <div>
-              <h1 className="text-xl sm:text-3xl lg:text-5xl font-black uppercase tracking-tight">{SHIP_CONFIG.name}</h1>
-              <p className="text-xs sm:text-base lg:text-xl text-slate-400 font-bold uppercase">{formattedSelectedDate}</p>
-            </div>
-          </div>
-          <button 
-            onClick={() => setView('menu-inicial')} 
-            className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 sm:px-8 sm:py-4 rounded-xl font-black uppercase text-xs sm:text-base transition-all shadow-lg"
-          >
-            Sair do Modo TV
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 lg:p-10 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 custom-scrollbar">
           {currentTvSlide === 0 && <EquipmentSection categories={CATEGORIES} data={equipmentData} onStatusChange={handleStatusChange} />}
           {currentTvSlide === 1 && <FuelPanel fuel={fuelData} fullWidth onChange={(k, v) => saveData({ fuel: {...fuelData, [k]: v}})} />}
           {currentTvSlide === 2 && <AguadaPanel data={aguadaData} equipmentData={equipmentData} personnelData={personnelData} onChange={(data) => saveData({ aguada: data })} shipName={SHIP_CONFIG.name} selectedDate={formattedSelectedDate} rawSelectedDate={selectedDate} />}
@@ -665,20 +649,39 @@ const App: React.FC = () => {
           )}
         </div>
 
-        <div className="bg-slate-900 border-t border-slate-800 p-3 sm:p-5 flex items-center justify-center gap-2 sm:gap-4 flex-wrap shrink-0">
-          {TV_SLIDES.map((slide, i) => (
-            <button 
-              key={slide.id} 
-              onClick={() => setCurrentTvSlide(i)} 
-              className={`px-3 py-2 sm:px-6 sm:py-3 rounded-xl font-black text-xs sm:text-sm lg:text-base transition-all uppercase ${
-                currentTvSlide === i 
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 scale-105' 
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
-              }`}
-            >
-              {slide.label}
-            </button>
-          ))}
+        <div className="bg-slate-900/95 backdrop-blur border-t border-slate-800 px-3 py-2 sm:px-5 sm:py-3 flex items-center justify-between gap-2 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
+            <ShipLogo className="h-7 sm:h-9 w-auto" customUrl={customLogo} />
+            <div className="hidden sm:block">
+              <span className="font-black text-xs sm:text-sm uppercase tracking-wider text-slate-200 block leading-tight">{SHIP_CONFIG.name}</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase block">{formattedSelectedDate}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto custom-scrollbar py-0.5">
+            {TV_SLIDES.map((slide, i) => (
+              <button 
+                key={slide.id} 
+                onClick={() => setCurrentTvSlide(i)} 
+                className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl font-black text-xs sm:text-sm transition-all uppercase whitespace-nowrap ${
+                  currentTvSlide === i 
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 scale-105' 
+                    : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white'
+                }`}
+              >
+                {slide.label}
+              </button>
+            ))}
+          </div>
+
+          <button 
+            onClick={() => setView('menu-inicial')} 
+            className="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl font-black uppercase text-xs transition-all shrink-0 flex items-center gap-1.5 shadow-md ml-1"
+            title="Sair do Modo TV"
+          >
+            <X size={16} />
+            <span className="hidden md:inline">Sair Modo TV</span>
+          </button>
         </div>
       </div>
     );
