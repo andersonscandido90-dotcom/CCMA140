@@ -110,6 +110,18 @@ export interface AguadaData {
   observacoesGerais?: string;
 }
 
+export interface ExtensionEntry {
+  id: string;
+  ramal: string;
+  setor: string;
+  departamento: string;
+  conves?: string;
+  responsavel?: string;
+  categoria?: 'EMERGENCIA' | 'OPERACIONAL' | 'ADMINISTRATIVO' | 'CAMAROTE' | 'DIVERSOS';
+  observacoes?: string;
+  isFavorite?: boolean;
+}
+
 export interface DailyReport {
   date: string;
   equipment: EquipmentData;
@@ -123,6 +135,7 @@ export interface DailyReport {
   eductorStatuses?: Record<string, boolean>;
   isisOverrides?: Record<string, string>;
   corteSoldaList?: CorteSoldaEntry[];
+  phoneDirectory?: ExtensionEntry[];
   theme?: string;
 }
 

@@ -20,9 +20,10 @@ import {
   Printer,
   Database,
   Flame,
-  Waves
+  Waves,
+  PhoneCall
 } from 'lucide-react';
-import { EquipmentStatus, DailyReport, FuelData, EquipmentData, StabilityData, PersonnelData, LogEntry, CorteSoldaEntry } from './types';
+import { EquipmentStatus, DailyReport, FuelData, EquipmentData, StabilityData, PersonnelData, LogEntry, CorteSoldaEntry, ExtensionEntry } from './types';
 import { CATEGORIES, SHIP_CONFIG } from './constants';
 import EquipmentSection from './components/EquipmentSection';
 import FuelPanel from './components/FuelPanel';
@@ -37,6 +38,7 @@ import AguadaPanel, { DEFAULT_AGUADA } from './components/AguadaPanel';
 import PrintReport from './components/PrintReport';
 import PrintSupervisionReport from './components/PrintSupervisionReport';
 import BackupManagerModal from './components/BackupManagerModal';
+import PhoneDirectoryPanel from './components/PhoneDirectoryPanel';
 import { AguadaData } from './types';
 
 const DEFAULT_FUEL: FuelData = { 
@@ -304,7 +306,8 @@ const App: React.FC = () => {
   const [corteSoldaList, setCorteSoldaList] = useState<CorteSoldaEntry[]>(initialReport.corteSoldaList || []);
   const [logs, setLogs] = useState<LogEntry[]>(initialReport.logs);
   const [serviceNotes, setServiceNotes] = useState<string>(initialReport.serviceNotes || '');
-  const [view, setView] = useState<'menu-inicial' | 'equipment' | 'fuel' | 'stability' | 'personnel' | 'tv-mode' | 'eductors' | 'cav' | 'restrictions' | 'isis' | 'aguada'>('menu-inicial');
+  const [phoneDirectory, setPhoneDirectory] = useState<ExtensionEntry[]>(initialReport.phoneDirectory || []);
+  const [view, setView] = useState<'menu-inicial' | 'equipment' | 'fuel' | 'stability' | 'personnel' | 'tv-mode' | 'eductors' | 'cav' | 'restrictions' | 'isis' | 'aguada' | 'phonebook'>('menu-inicial');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentTvSlide, setCurrentTvSlide] = useState(0);
   const [customLogo, setCustomLogo] = useState<string | null>(localStorage.getItem('custom_ship_logo'));
@@ -316,6 +319,7 @@ const App: React.FC = () => {
 
   const NAV_ITEMS = useMemo(() => [
     { id: 'menu-inicial', icon: <LayoutDashboard size={18} />, label: 'Menu inicial' },
+    { id: 'phonebook', icon: <PhoneCall size={18} />, label: 'Lista Telefônica' },
     { id: 'equipment', icon: <Activity size={18} />, label: 'Equipamentos' },
     { id: 'restrictions', icon: <ClipboardList size={18} />, label: 'Restrições' },
     { id: 'fuel', icon: <Droplets size={18} />, label: 'Cargas' },
@@ -356,6 +360,7 @@ const App: React.FC = () => {
         setEductorStatuses(data.eductorStatuses || {});
         setIsisOverrides(data.isisOverrides || {});
         setCorteSoldaList(data.corteSoldaList || []);
+        if (data.phoneDirectory) setPhoneDirectory(data.phoneDirectory);
         setLogs(data.logs || []);
         setServiceNotes(data.serviceNotes || localStorage.getItem('service_notes') || '');
         console.log('✅ Dados carregados para', newDate);
@@ -388,6 +393,7 @@ const App: React.FC = () => {
       eductorStatuses,
       isisOverrides,
       corteSoldaList,
+      phoneDirectory,
       logs,
       serviceNotes
     };
@@ -438,6 +444,10 @@ const App: React.FC = () => {
     if (updates.restrictionReasons) setRestrictionReasons(updates.restrictionReasons);
     if (updates.eductorStatuses) setEductorStatuses(updates.eductorStatuses);
     if (updates.corteSoldaList) setCorteSoldaList(updates.corteSoldaList);
+    if (updates.phoneDirectory) {
+      setPhoneDirectory(updates.phoneDirectory);
+      localStorage.setItem('ship_phone_directory', JSON.stringify(updates.phoneDirectory));
+    }
     if (updates.isisOverrides) {
       setIsisOverrides(updates.isisOverrides);
       localStorage.setItem('master_isis_overrides', JSON.stringify(updates.isisOverrides));
@@ -459,6 +469,7 @@ const App: React.FC = () => {
       eductorStatuses: updates.eductorStatuses !== undefined ? updates.eductorStatuses : eductorStatuses,
       isisOverrides: updates.isisOverrides !== undefined ? updates.isisOverrides : isisOverrides,
       corteSoldaList: updates.corteSoldaList !== undefined ? updates.corteSoldaList : corteSoldaList,
+      phoneDirectory: updates.phoneDirectory !== undefined ? updates.phoneDirectory : phoneDirectory,
       logs: updates.logs !== undefined ? updates.logs : logs,
       serviceNotes: updates.serviceNotes !== undefined ? updates.serviceNotes : serviceNotes
     };
@@ -528,7 +539,7 @@ const App: React.FC = () => {
     }
   };
 
-  // 📤 Exportar JSON (agora com anotações e corte/solda)
+  // 📤 Exportar JSON (agora com anotações, corte/solda e lista telefônica)
   const handleExportJSON = () => {
     saveCurrentReport();
     const relatorio: DailyReport = {
@@ -541,6 +552,7 @@ const App: React.FC = () => {
       eductorStatuses,
       isisOverrides,
       corteSoldaList,
+      phoneDirectory,
       logs,
       serviceNotes
     };
@@ -555,7 +567,7 @@ const App: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  // 📥 Importar JSON (agora com anotações e corte/solda)
+  // 📥 Importar JSON (agora com anotações, corte/solda e lista telefônica)
   const handleImportJSON = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -586,6 +598,10 @@ const App: React.FC = () => {
           setEductorStatuses(dados.eductorStatuses || {});
           setIsisOverrides(dados.isisOverrides || {});
           setCorteSoldaList(dados.corteSoldaList || []);
+          if (dados.phoneDirectory) {
+            setPhoneDirectory(dados.phoneDirectory);
+            localStorage.setItem('ship_phone_directory', JSON.stringify(dados.phoneDirectory));
+          }
           setLogs(dados.logs || []);
           setServiceNotes(dados.serviceNotes || '');
           localStorage.setItem(`report_${usarDataOriginal ? dados.date : selectedDate}`, JSON.stringify(dados));
@@ -619,6 +635,7 @@ const App: React.FC = () => {
 
   if (view === 'tv-mode') {
     const TV_SLIDES = [
+      { id: 'phonebook', label: 'Lista Telefônica' },
       { id: 'equipment', label: 'Equipamentos' },
       { id: 'fuel', label: 'Cargas' },
       { id: 'aguada', label: 'Aguada' },
@@ -632,14 +649,20 @@ const App: React.FC = () => {
     return (
       <div className="fixed inset-0 bg-slate-950 text-white flex flex-col overflow-hidden z-[100]">
         <div className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 custom-scrollbar">
-          {currentTvSlide === 0 && <EquipmentSection categories={CATEGORIES} data={equipmentData} onStatusChange={handleStatusChange} />}
-          {currentTvSlide === 1 && <FuelPanel fuel={fuelData} fullWidth onChange={(k, v) => saveData({ fuel: {...fuelData, [k]: v}})} />}
-          {currentTvSlide === 2 && <AguadaPanel data={aguadaData} equipmentData={equipmentData} personnelData={personnelData} onChange={(data) => saveData({ aguada: data })} shipName={SHIP_CONFIG.name} selectedDate={formattedSelectedDate} rawSelectedDate={selectedDate} />}
-          {currentTvSlide === 3 && <StabilityPanel fuelData={fuelData} data={stabilityData} onChange={(k, v) => saveData({ stability: {...stabilityData, [k]: v}})} />}
-          {currentTvSlide === 4 && <CAVPanel eductorStatuses={eductorStatuses} onStatusToggle={handleEductorToggle} />}
-          {currentTvSlide === 5 && <CorteSoldaPanel list={corteSoldaList} onChange={(list) => saveData({ corteSoldaList: list })} readOnly />}
-          {currentTvSlide === 6 && <IsisPanel overrides={isisOverrides} onOverrideChange={handleIsisOverride} />}
-          {currentTvSlide === 7 && (
+          {currentTvSlide === 0 && (
+            <PhoneDirectoryPanel 
+              entries={phoneDirectory} 
+              onUpdateEntries={(newEntries) => saveData({ phoneDirectory: newEntries })} 
+            />
+          )}
+          {currentTvSlide === 1 && <EquipmentSection categories={CATEGORIES} data={equipmentData} onStatusChange={handleStatusChange} />}
+          {currentTvSlide === 2 && <FuelPanel fuel={fuelData} fullWidth onChange={(k, v) => saveData({ fuel: {...fuelData, [k]: v}})} />}
+          {currentTvSlide === 3 && <AguadaPanel data={aguadaData} equipmentData={equipmentData} personnelData={personnelData} onChange={(data) => saveData({ aguada: data })} shipName={SHIP_CONFIG.name} selectedDate={formattedSelectedDate} rawSelectedDate={selectedDate} />}
+          {currentTvSlide === 4 && <StabilityPanel fuelData={fuelData} data={stabilityData} onChange={(k, v) => saveData({ stability: {...stabilityData, [k]: v}})} />}
+          {currentTvSlide === 5 && <CAVPanel eductorStatuses={eductorStatuses} onStatusToggle={handleEductorToggle} />}
+          {currentTvSlide === 6 && <CorteSoldaPanel list={corteSoldaList} onChange={(list) => saveData({ corteSoldaList: list })} readOnly />}
+          {currentTvSlide === 7 && <IsisPanel overrides={isisOverrides} onOverrideChange={handleIsisOverride} />}
+          {currentTvSlide === 8 && (
             <PersonnelView 
               data={personnelData} 
               onChange={(k, v) => saveData({ personnel: { ...personnelData, [k as keyof PersonnelData]: v } })} 
@@ -847,6 +870,12 @@ const App: React.FC = () => {
                <StatusCharts data={equipmentData} />
                <ActivityLog logs={logs} />
             </div>
+          )}
+          {view === 'phonebook' && (
+            <PhoneDirectoryPanel 
+              entries={phoneDirectory} 
+              onUpdateEntries={(newEntries) => saveData({ phoneDirectory: newEntries })} 
+            />
           )}
           {view === 'equipment' && <EquipmentSection categories={CATEGORIES} data={equipmentData} onStatusChange={handleStatusChange} />}
           {view === 'fuel' && <FuelPanel fuel={fuelData} fullWidth onChange={(k, v) => saveData({ fuel: {...fuelData, [k]: v}})} />}
