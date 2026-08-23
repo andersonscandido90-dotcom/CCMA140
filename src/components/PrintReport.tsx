@@ -43,13 +43,21 @@ function calculateDisplacement(draftForward: number, draftAft: number): number {
   ];
 
   const trimAbs = Math.abs(trim);
-  let C_index = 0, K_index = 0;
-  if (trim < 0) {
-    if (trimAbs > 1.0) { C_index = 1; K_index = 0; }
-    else { C_index = 2; K_index = 1; }
+  const C_index = 2; // (c) NÍVEL é sempre índice 2
+  let K_index = 2;
+  
+  if (Math.abs(trim) < 0.001) {
+    K_index = 2;
+  } else if (trim < 0) {
+    // Trim de Ré: se trim >= 1.0m (ou |trim| >= 1.0m), usa coluna 0 (1,0m <= T < 2,0m)
+    if (trimAbs >= 0.9999) {
+      K_index = 0;
+    } else {
+      K_index = 1;
+    }
   } else {
-    if (trimAbs > 1.0) { C_index = 1; K_index = 3; }
-    else { C_index = 1; K_index = 2; }
+    // Trim de Proa: usa coluna 3
+    K_index = 3;
   }
 
   const sortedTable = [...hydrostaticTable].sort((a, b) => a.draft - b.draft);
@@ -65,12 +73,12 @@ function calculateDisplacement(draftForward: number, draftAft: number): number {
   }
 
   const factor = lower.draft === upper.draft ? 0 : (meanDraft - lower.draft) / (upper.draft - lower.draft);
-  const C = lower.valores[C_index] + (upper.valores[C_index] - lower.valores[C_index]) * factor;
-  const K = lower.valores[K_index] + (upper.valores[K_index] - lower.valores[K_index]) * factor;
-  const T = C - K;
-  const S = T * trim;
-  const displacement = C + S;
-  return Math.max(0, Math.round(displacement * 10) / 10);
+  const c = lower.valores[C_index] + (upper.valores[C_index] - lower.valores[C_index]) * factor;
+  const k = lower.valores[K_index] + (upper.valores[K_index] - lower.valores[K_index]) * factor;
+  const r = c - k;
+  const s = r * trim;
+  const t = c + s;
+  return Math.max(0, Math.round(t * 10) / 10);
 }
 
 export default function PrintReport({ report, onClose }: Props) {

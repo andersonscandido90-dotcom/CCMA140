@@ -13,10 +13,13 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange }) => {
   const meanDraft = (data.draftForward + data.draftAft) / 2;
   const trim = data.draftForward - data.draftAft; // Positivo = trim para vante
   
-  // === Tabela Hidrostática COMPLETA com 4 colunas ===
+  // === Tabela Hidrostática Oficial NAM Atlântico (26 linhas de 5.0m a 7.5m) ===
+  // Estrutura das 4 colunas:
+  // [0] = (a) DE RÉ (1,0m < T < 2,0m)
+  // [1] = (b) DE RÉ (T < 1,0m)
+  // [2] = (c) NÍVEL
+  // [3] = (d) DE PROA (T < 1,0m)
   const hydrostaticTable = useMemo(() => [
-    // Estrutura da tabela: calado 6.5m → [21727.4, 21230.5, 20777.6, 20368.8]
-    // Colunas: 0=DE RÉ (1.0m<T<2.0m), 1=NÍVEL (T<1.0m), 2=DE PROA (T<1.0m), 3=DE PROA (1.0m<T<2.0m?)
     { draft: 7.5, valores: [26118.811, 25580.9, 25086.6, 24634.0] },
     { draft: 7.4, valores: [25670.582, 25137.0, 24646.4, 24197.7] },
     { draft: 7.3, valores: [25224.438, 24695.1, 24208.2, 23763.6] },
@@ -27,7 +30,6 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange }) => {
     { draft: 6.8, valores: [23024.0, 22514.5, 22048.0, 21625.5] },
     { draft: 6.7, valores: [22589.9, 22084.4, 21622.4, 21204.4] },
     { draft: 6.6, valores: [22157.7, 21656.3, 21198.9, 20785.5] },
-    // CALADO 6.5m - VALORES EXATOS DA TABELA
     { draft: 6.5, valores: [21727.4, 21230.5, 20777.6, 20368.8] },
     { draft: 6.4, valores: [21299.1, 20806.8, 20358.4, 19954.3] },
     { draft: 6.3, valores: [20873.0, 20385.2, 19941.4, 19542.2] },
@@ -46,39 +48,40 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange }) => {
     { draft: 5.0, valores: [15534.0, 15105.7, 14735.3, 14434.4] },
   ], []);
 
-  // === Função para determinar quais colunas usar baseado no trim ===
-  const getColumnsForTrim = (trim: number): { C_index: number; K_index: number } => {
-    const trimAbs = Math.abs(trim);
-    
-    // Baseado na análise do exemplo:
-    // Trim = -0.6m (para ré, pequeno)
-    // No cálculo: C = 20.777,6 (coluna 2) e K = 21.230,5 (coluna 1)
-    
-    if (trim < 0) { // Trim para ré (negativo)
-      if (trimAbs > 1.0) {
-        // Trim grande para ré: C usa coluna 1 (NÍVEL), K usa coluna 0 (DE RÉ grande)
-        return { C_index: 1, K_index: 0 };
+  // Condição do navio: Carregado vs. Leve
+  const [operationalCondition, setOperationalCondition] = useState<'AUTO' | 'CARREGADO' | 'LEVE'>('AUTO');
+
+  // === Função para determinar quais colunas usar baseado na Papeleta Oficial ===
+  // (c) é SEMPRE a coluna NÍVEL (índice 2)
+  // (k) é a coluna de trim correspondente:
+  // - Trim de Ré e 1.0m <= |w| < 2.0m -> Coluna (a) [índice 0] (1,0m <= T < 2,0m)
+  // - Trim de Ré e |w| < 1.0m -> Coluna (b) [índice 1] (T < 1,0m)
+  // - Trim de Proa e |w| <= 1.0m (ou >0) -> Coluna (d) [índice 3]
+  // - Nível (w = 0) -> Coluna (c) [índice 2]
+  const getColumnsForTrim = (trimVal: number): { C_index: number; K_index: number; trimCase: string } => {
+    const C_index = 2; // (c) NÍVEL é SEMPRE a coluna de índice 2
+    const trimAbs = Math.abs(trimVal);
+
+    if (Math.abs(trimVal) < 0.001) {
+      return { C_index: 2, K_index: 2, trimCase: 'Nível / Compassado (w = 0)' };
+    }
+
+    if (trimVal < 0) {
+      // Trim de Ré (x - y < 0)
+      // Quando trim = 1.0m (ou >= 1.0m), considera a 1ª coluna [Coluna a]: 1,0m <= T < 2,0m
+      if (trimAbs >= 0.9999) {
+        return { C_index: 2, K_index: 0, trimCase: 'De Ré: 1,0m ≤ T < 2,0m [Coluna a]' };
       } else {
-        // Trim pequeno para ré: C usa coluna 2 (DE PROA pequeno), K usa coluna 1 (NÍVEL)
-        return { C_index: 2, K_index: 1 };
+        return { C_index: 2, K_index: 1, trimCase: 'De Ré: T < 1,0m [Coluna b]' };
       }
-    } else { // Trim para vante (positivo)
-      if (trimAbs > 1.0) {
-        // Trim grande para vante: C usa coluna 1 (NÍVEL), K usa coluna 3 (DE PROA grande)
-        return { C_index: 1, K_index: 3 };
-      } else {
-        // Trim pequeno para vante: C usa coluna 1 (NÍVEL), K usa coluna 2 (DE PROA pequeno)
-        return { C_index: 1, K_index: 2 };
-      }
+    } else {
+      // Trim de Proa / Vante (x - y > 0)
+      return { C_index: 2, K_index: 3, trimCase: 'De Proa: T < 1,0m [Coluna d]' };
     }
   };
 
-  // === Lógica Hidrostática CORRETA com 4 colunas ===
+  // === Lógica Hidrostática Oficial NAM ATLÂNTICO (1ª, 2ª e 3ª Etapa) ===
   const hydrostatics = useMemo(() => {
-    console.log('=== CÁLCULO COM 4 COLUNAS ===');
-    console.log('Calado AV:', data.draftForward.toFixed(2), 'AR:', data.draftAft.toFixed(2));
-    console.log('Médio:', meanDraft.toFixed(2), 'Trim:', trim.toFixed(2));
-    
     if (meanDraft <= 0) {
       return { 
         displacement: 21500, 
@@ -86,82 +89,113 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange }) => {
         km: 8.0,
         trimCorrection: 0,
         baseDisplacement: 21500,
-        K_value: 0,
+        K_value: 21500,
         C_value: 21500,
-        T_value: 0,
-        C_index: 0,
-        K_index: 0
+        r_value: 0,
+        s_value: 0,
+        t_value: 21500,
+        u_value: 21490,
+        v_value: 2.703,
+        conditionName: 'Carregado',
+        C_index: 2,
+        K_index: 1,
+        trimCase: 'De Ré: T < 1,0m'
       };
     }
-    
-    // 1. Determinar índices das colunas baseado no trim
-    const { C_index, K_index } = getColumnsForTrim(trim);
-    console.log('Índices: C=', C_index, 'K=', K_index);
-    
-    // 2. Encontrar valores na tabela para interpolação
+
+    // 1ª ETAPA:
+    // x = Calado AV
+    // y = Calado AR
+    // z = Calado Médio = (x + y) / 2
+    // w = TRIM = x - y
+    const x = data.draftForward;
+    const y = data.draftAft;
+    const z = meanDraft;
+    const w = trim; // x - y
+
+    // 2ª ETAPA: Determinar índices das colunas na tabela hidrostática
+    const { C_index, K_index, trimCase } = getColumnsForTrim(w);
+
+    // Interpolação linear na tabela hidrostática para Calado Médio (z)
     const sortedTable = [...hydrostaticTable].sort((a, b) => a.draft - b.draft);
-    
     let lower = sortedTable[0];
     let upper = sortedTable[sortedTable.length - 1];
-    
-    for (let i = 0; i < sortedTable.length - 1; i++) {
-      if (sortedTable[i].draft <= meanDraft && sortedTable[i + 1].draft >= meanDraft) {
-        lower = sortedTable[i];
-        upper = sortedTable[i + 1];
-        break;
+
+    if (z <= lower.draft) {
+      lower = sortedTable[0];
+      upper = sortedTable[0];
+    } else if (z >= upper.draft) {
+      lower = sortedTable[sortedTable.length - 1];
+      upper = sortedTable[sortedTable.length - 1];
+    } else {
+      for (let i = 0; i < sortedTable.length - 1; i++) {
+        if (sortedTable[i].draft <= z && sortedTable[i + 1].draft >= z) {
+          lower = sortedTable[i];
+          upper = sortedTable[i + 1];
+          break;
+        }
       }
     }
-    
-    // 3. Interpolação linear
-    const factor = lower.draft === upper.draft ? 0 : (meanDraft - lower.draft) / (upper.draft - lower.draft);
-    
-    // Obter C (valor base)
-    const C = lower.valores[C_index] + (upper.valores[C_index] - lower.valores[C_index]) * factor;
-    
-    // Obter K (valor da tabela para o trim atual)
-    const K = lower.valores[K_index] + (upper.valores[K_index] - lower.valores[K_index]) * factor;
-    
-    console.log('Valores interpolados:');
-    console.log('C (índice', C_index, '):', C.toFixed(1));
-    console.log('K (índice', K_index, '):', K.toFixed(1));
-    
-    // 4. Cálculos conforme fórmula
-    const T = C - K;
-    const S = T * trim;
-    const displacement = C + S;
-    
-    console.log('Cálculos:');
-    console.log('T = C - K =', T.toFixed(1));
-    console.log('S = T × trim =', S.toFixed(2));
-    console.log('Deslocamento = C + S =', displacement.toFixed(1));
-    
-    // 5. Cálculo do GM
-    const isLoaded = displacement > 20000;
-    const V = isLoaded ? 2.703 : 2.561;
+
+    const factor = lower.draft === upper.draft ? 0 : (z - lower.draft) / (upper.draft - lower.draft);
+
+    // c = NÍVEL (coluna índice 2)
+    const c = lower.valores[C_index] + (upper.valores[C_index] - lower.valores[C_index]) * factor;
+
+    // k = TRIM DESL. (coluna correspondente a, b, ou d)
+    const k = lower.valores[K_index] + (upper.valores[K_index] - lower.valores[K_index]) * factor;
+
+    // 3ª ETAPA:
+    // 1º Cálculo: r = c - k
+    const r = c - k;
+
+    // 2º Cálculo: s = r * w (utiliza o sinal de w)
+    const s = r * w;
+
+    // DESLOCAMENTO: t = c + s
+    const t = c + s;
+
+    // Definição da condição (Carregado vs. Leve):
+    // Carregado: u = 21.490 t, v = 2,703
+    // Leve:      u = 17.718 t, v = 2,561
+    let isLoaded = true;
+    if (operationalCondition === 'CARREGADO') {
+      isLoaded = true;
+    } else if (operationalCondition === 'LEVE') {
+      isLoaded = false;
+    } else {
+      // AUTO
+      isLoaded = t >= 19500;
+    }
+
     const u = isLoaded ? 21490 : 17718;
-    const gm = (V * displacement) / u;
-    
-    console.log('Estado:', isLoaded ? 'Carregado' : 'Leve');
-    console.log('V (GMf):', V);
-    console.log('u (desl. cond.):', u);
-    console.log('GM = (V × desloc) / u =', gm.toFixed(4));
-    
-    // 6. KM aproximado
-    const km = 14.45 - (meanDraft * 0.1);
-    
+    const v = isLoaded ? 2.703 : 2.561;
+
+    // GM CALCULADO: p = (v * t) / u
+    const p = (v * t) / u;
+
+    // KM aproximado
+    const km = 14.45 - (z * 0.1);
+
     return { 
-      displacement: Math.max(0, displacement),
-      gm: Math.max(0, gm),
+      displacement: Math.max(0, t),
+      gm: Math.max(0, p),
       km: Math.max(0, km),
-      trimCorrection: S,
-      baseDisplacement: C,
-      K_value: K,
-      C_value: C,
-      T_value: T,
+      trimCorrection: s,
+      baseDisplacement: c,
+      K_value: k,
+      C_value: c,
+      r_value: r,
+      s_value: s,
+      t_value: t,
+      u_value: u,
+      v_value: v,
+      conditionName: isLoaded ? 'Carregado' : 'Leve',
       C_index,
-      K_index
+      K_index,
+      trimCase
     };
-  }, [meanDraft, trim, data.draftForward, data.draftAft, hydrostaticTable]);
+  }, [meanDraft, trim, data.draftForward, data.draftAft, hydrostaticTable, operationalCondition]);
 
   // === ATUALIZAR O GM E DESLOCAMENTO ===
   useEffect(() => {
@@ -404,55 +438,153 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange }) => {
         </div>
       </div>
 
-      {/* Painel de status com informações detalhadas */}
-      <div className="mt-4 p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
+      {/* Painel de status com informações detalhadas e Etapas Oficiais da Marinha */}
+      <div className="mt-4 p-5 bg-slate-800/40 rounded-2xl border border-slate-700/60 shadow-inner">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-700/60 pb-3">
             <div className="flex items-center gap-3">
               {gmStatus.icon}
               <span className={`font-black uppercase text-sm ${gmStatus.color}`}>
                 {gmStatus.label}
               </span>
             </div>
+
+            {/* Seletor de Condição Operacional */}
+            <div className="flex items-center gap-2 bg-slate-900/80 p-1.5 rounded-xl border border-slate-700/80">
+              <span className="text-[10px] font-black uppercase text-slate-400 px-2">Condição:</span>
+              <button
+                onClick={() => setOperationalCondition('AUTO')}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase transition-all ${
+                  operationalCondition === 'AUTO' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Auto ({hydrostatics.conditionName})
+              </button>
+              <button
+                onClick={() => setOperationalCondition('CARREGADO')}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase transition-all ${
+                  operationalCondition === 'CARREGADO' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Carregado
+              </button>
+              <button
+                onClick={() => setOperationalCondition('LEVE')}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase transition-all ${
+                  operationalCondition === 'LEVE' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Leve
+              </button>
+            </div>
+
             <div className="text-right">
-              <span className="text-slate-500 text-sm">GM: {hydrostatics.gm.toFixed(4)} m</span>
+              <span className="text-white font-mono font-bold text-sm bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-700">
+                GM: {hydrostatics.gm.toFixed(4)} m
+              </span>
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="text-slate-500">Trim: {trim.toFixed(2)} m</div>
-            <div className="text-slate-500 text-right">Correção: {hydrostatics.trimCorrection?.toFixed(1)} t</div>
-            
-            <div className="text-slate-500">C (índice {hydrostatics.C_index}): {hydrostatics.C_value?.toFixed(1)} t</div>
-            <div className="text-slate-500 text-right">K (índice {hydrostatics.K_index}): {hydrostatics.K_value?.toFixed(1)} t</div>
-            
-            <div className="text-slate-500 col-span-2">
-              T = C - K = {hydrostatics.T_value?.toFixed(1)} t
+          {/* 3 Etapas Oficiais da Papeleta */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            {/* 1ª Etapa */}
+            <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-1">
+              <div className="text-blue-400 font-black uppercase text-[10px] tracking-wider mb-1 flex items-center justify-between">
+                <span>1ª ETAPA</span>
+                <span className="text-slate-500">Inputs & Médias</span>
+              </div>
+              <div className="flex justify-between text-slate-300 font-mono text-[11px]">
+                <span>AV (x) / AR (y):</span>
+                <span className="font-bold text-white">{data.draftForward.toFixed(2)}m / {data.draftAft.toFixed(2)}m</span>
+              </div>
+              <div className="flex justify-between text-slate-300 font-mono text-[11px]">
+                <span>Calado Médio (z):</span>
+                <span className="font-bold text-blue-400">{meanDraft.toFixed(2)} m</span>
+              </div>
+              <div className="flex justify-between text-slate-300 font-mono text-[11px]">
+                <span>Trim (w = x - y):</span>
+                <span className={`font-bold ${trim < 0 ? 'text-amber-400' : trim > 0 ? 'text-blue-400' : 'text-green-400'}`}>
+                  {trim.toFixed(2)} m ({trim < 0 ? 'Ré' : trim > 0 ? 'Vante' : 'Nível'})
+                </span>
+              </div>
+              <div className="flex justify-between text-slate-400 font-mono text-[10px] pt-1 border-t border-slate-800">
+                <span>u (Desl. Cond):</span>
+                <span className="text-slate-200">{hydrostatics.u_value.toLocaleString()} t</span>
+              </div>
+              <div className="flex justify-between text-slate-400 font-mono text-[10px]">
+                <span>v (GMf Cond):</span>
+                <span className="text-slate-200">{hydrostatics.v_value.toFixed(3)}</span>
+              </div>
+            </div>
+
+            {/* 2ª Etapa */}
+            <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-1">
+              <div className="text-indigo-400 font-black uppercase text-[10px] tracking-wider mb-1 flex items-center justify-between">
+                <span>2ª ETAPA</span>
+                <span className="text-slate-500">Tabela Hidrostática</span>
+              </div>
+              <div className="text-slate-400 text-[10px] truncate" title={hydrostatics.trimCase}>
+                Coluna: <strong className="text-amber-300">{hydrostatics.trimCase}</strong>
+              </div>
+              <div className="flex justify-between text-slate-300 font-mono text-[11px] pt-1">
+                <span>c (Nível):</span>
+                <span className="font-bold text-white">{hydrostatics.C_value.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} t</span>
+              </div>
+              <div className="flex justify-between text-slate-300 font-mono text-[11px]">
+                <span>k (Trim Desl):</span>
+                <span className="font-bold text-indigo-400">{hydrostatics.K_value.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} t</span>
+              </div>
+              <div className="flex justify-between text-slate-300 font-mono text-[11px] pt-1 border-t border-slate-800">
+                <span>1º Cálc (r = c - k):</span>
+                <span className="font-bold text-amber-400">{hydrostatics.r_value.toFixed(1)} t</span>
+              </div>
+            </div>
+
+            {/* 3ª Etapa */}
+            <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-1">
+              <div className="text-emerald-400 font-black uppercase text-[10px] tracking-wider mb-1 flex items-center justify-between">
+                <span>3ª ETAPA</span>
+                <span className="text-slate-500">Resultados Finais</span>
+              </div>
+              <div className="flex justify-between text-slate-300 font-mono text-[11px]">
+                <span>2º Cálc (s = r × w):</span>
+                <span className="font-bold text-emerald-400">
+                  {hydrostatics.s_value >= 0 ? '+' : ''}{hydrostatics.s_value.toFixed(2)} t
+                </span>
+              </div>
+              <div className="flex justify-between text-slate-300 font-mono text-[11px]">
+                <span>Desloc. (t = c + s):</span>
+                <span className="font-bold text-white text-xs">
+                  {hydrostatics.t_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} t
+                </span>
+              </div>
+              <div className="flex justify-between text-slate-300 font-mono text-[11px] pt-1 border-t border-slate-800">
+                <span>GM (p = v × t / u):</span>
+                <span className="font-bold text-emerald-300 text-xs">{hydrostatics.gm.toFixed(4)} m</span>
+              </div>
+              <div className="text-[10px] text-slate-500 font-mono">
+                p = ({hydrostatics.v_value.toFixed(3)} × {Math.round(hydrostatics.t_value).toLocaleString()}) / {hydrostatics.u_value}
+              </div>
             </div>
           </div>
           
-          {/* Mostrar qual caso estamos usando */}
-          <div className="text-xs text-amber-400 mt-2 border-t border-slate-700 pt-2 flex justify-between items-center">
-            <span>
-              {trim < 0 ? (
-                trim < -1.0 ? 'Caso: Trim grande para ré (>1.0m)' : 'Caso: Trim pequeno para ré (≤1.0m)'
-              ) : (
-                trim > 1.0 ? 'Caso: Trim grande para vante (>1.0m)' : 'Caso: Trim pequeno para vante (≤1.0m)'
-              )}
+          <div className="text-xs text-slate-400 border-t border-slate-700/60 pt-2 flex flex-wrap justify-between items-center gap-2">
+            <span className="text-slate-400 font-mono text-[11px]">
+              Fórmulas oficiais calibradas para o <strong className="text-slate-200">NAM Atlântico (A140)</strong>
             </span>
             <button
               onClick={() => setShowCalcModal(true)}
-              className="text-[10px] text-blue-400 font-black uppercase hover:underline flex items-center gap-1"
+              className="text-xs text-blue-400 hover:text-blue-300 font-black uppercase hover:underline flex items-center gap-1.5 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-700"
             >
-              <BookOpen size={12} /> Ver Fórmulas e Detalhes
+              <BookOpen size={14} /> Abrir Papeleta & Tabela Hidrostática
             </button>
           </div>
         </div>
       </div>
 
-      {/* Modal de Explicação Completa dos Cálculos */}
+      {/* Modal de Explicação Completa dos Cálculos e Papeleta Oficial */}
       {showCalcModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-300 overflow-y-auto">
           <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-4xl w-full p-5 sm:p-8 shadow-2xl relative my-8 max-h-[90vh] overflow-y-auto">
             {/* Botão Fechar */}
             <button
@@ -469,93 +601,168 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange }) => {
               </div>
               <div>
                 <h3 className="font-black text-white uppercase text-xl sm:text-2xl tracking-tight">
-                  Memória de Cálculo de Estabilidade (A140)
+                  Papeleta e Memória de Cálculo de Estabilidade
                 </h3>
                 <p className="text-blue-400 font-bold text-xs uppercase tracking-wider">
-                  Fórmulas, Tabela Hidrostática e Variação por Densidade
+                  NAM ATLÂNTICO (A140) — Padrão Oficial da Marinha do Brasil
                 </p>
               </div>
             </div>
 
-            {/* Conteúdo Explicativo */}
+            {/* Papeleta Oficial Formatada */}
             <div className="space-y-6 text-slate-300 text-xs sm:text-sm font-sans leading-relaxed">
               
-              {/* 1. Calado Médio e Trim */}
-              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5">
-                <div className="flex items-center gap-2 text-blue-400 font-black text-sm uppercase mb-2">
-                  <MoveVertical size={16} />
-                  <span>1. Calado Médio (Tm) e Trim (t)</span>
+              {/* Box da Papeleta */}
+              <div className="bg-slate-950 border-2 border-blue-500/30 rounded-2xl p-4 sm:p-6 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <span className="text-sm font-black uppercase text-blue-400">PAPELETA DE ESTABILIDADE — NAM ATLÂNTICO</span>
+                  <span className="text-xs font-mono text-slate-400">Condição: <strong className="text-white">{hydrostatics.conditionName}</strong></span>
                 </div>
-                <div className="space-y-2 font-mono text-xs text-slate-200">
-                  <p><strong className="text-amber-400">Calado Médio (Tm):</strong> Tm = (Calado_AV + Calado_AR) / 2</p>
-                  <p className="text-slate-400 pl-4">→ Média aritmética entre a marcação de calado na Proa (AV) e Popa (AR).</p>
-                  
-                  <p className="mt-2"><strong className="text-amber-400">Trim (t):</strong> Trim = Calado_AV - Calado_AR</p>
-                  <p className="text-slate-400 pl-4">→ Se t &gt; 0: Navio Abicado (Proa mais baixa).</p>
-                  <p className="text-slate-400 pl-4">→ Se t &lt; 0: Navio Derrabado (Popa mais baixa).</p>
-                  <p className="text-slate-400 pl-4">→ Se t = 0: Navio em Nível / Compassado.</p>
+
+                {/* 1ª ETAPA */}
+                <div className="border border-slate-800 rounded-xl overflow-hidden">
+                  <div className="bg-slate-800/80 px-3 py-1.5 text-[11px] font-black uppercase text-slate-300 text-center">
+                    1ª ETAPA
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-6 divide-x divide-y sm:divide-y-0 divide-slate-800 text-center font-mono text-xs">
+                    <div className="p-2">
+                      <div className="text-[10px] text-slate-400">CALADO AV (x)</div>
+                      <div className="font-bold text-white text-sm mt-1">{data.draftForward.toFixed(2)}m</div>
+                    </div>
+                    <div className="p-2">
+                      <div className="text-[10px] text-slate-400">CALADO AR (y)</div>
+                      <div className="font-bold text-white text-sm mt-1">{data.draftAft.toFixed(2)}m</div>
+                    </div>
+                    <div className="p-2">
+                      <div className="text-[10px] text-slate-400">CALADO MÉDIO (z)</div>
+                      <div className="font-bold text-blue-400 text-sm mt-1">{meanDraft.toFixed(2)}m</div>
+                      <div className="text-[9px] text-slate-500">(x+y)/2</div>
+                    </div>
+                    <div className="p-2">
+                      <div className="text-[10px] text-slate-400">TRIM (w)</div>
+                      <div className="font-bold text-amber-400 text-sm mt-1">{trim.toFixed(2)}m</div>
+                      <div className="text-[9px] text-slate-500">{trim < 0 ? 'para ré' : trim > 0 ? 'para vante' : 'nível'}</div>
+                    </div>
+                    <div className="p-2">
+                      <div className="text-[10px] text-slate-400">DESL. CONDICIONAL (u)</div>
+                      <div className="font-bold text-white text-sm mt-1">{hydrostatics.u_value.toLocaleString()}</div>
+                      <div className="text-[9px] text-slate-500">t</div>
+                    </div>
+                    <div className="p-2">
+                      <div className="text-[10px] text-slate-400">GMf CONDICIONAL (v)</div>
+                      <div className="font-bold text-white text-sm mt-1">{hydrostatics.v_value.toFixed(3)}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2ª ETAPA */}
+                <div className="border border-slate-800 rounded-xl overflow-hidden">
+                  <div className="bg-slate-800/80 px-3 py-1.5 text-[11px] font-black uppercase text-slate-300 text-center">
+                    2ª ETAPA — TABELA HIDROSTÁTICA (Interpolação em Calado Médio z = {meanDraft.toFixed(2)}m)
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-slate-800 text-center font-mono text-xs">
+                    <div className={`p-2 ${hydrostatics.K_index === 0 ? 'bg-blue-950/40 ring-2 ring-blue-500/40' : ''}`}>
+                      <div className="text-[10px] text-slate-400">DE RÉ 1,0m ≤ T &lt; 2,0m (a)</div>
+                      <div className="font-bold text-white text-sm mt-1">
+                        {hydrostatics.K_index === 0 ? `(k) = ${hydrostatics.K_value.toFixed(1)}` : '—'}
+                      </div>
+                    </div>
+                    <div className={`p-2 ${hydrostatics.K_index === 1 ? 'bg-blue-950/40 ring-2 ring-blue-500/40' : ''}`}>
+                      <div className="text-[10px] text-slate-400">DE RÉ T &lt; 1,0m (b)</div>
+                      <div className="font-bold text-white text-sm mt-1">
+                        {hydrostatics.K_index === 1 ? `(k) = ${hydrostatics.K_value.toFixed(1)}` : '—'}
+                      </div>
+                    </div>
+                    <div className="p-2 bg-indigo-950/40 ring-2 ring-indigo-500/40">
+                      <div className="text-[10px] text-slate-400">NÍVEL (c)</div>
+                      <div className="font-bold text-indigo-300 text-sm mt-1">
+                        (c) = {hydrostatics.C_value.toFixed(1)}
+                      </div>
+                    </div>
+                    <div className={`p-2 ${hydrostatics.K_index === 3 ? 'bg-blue-950/40 ring-2 ring-blue-500/40' : ''}`}>
+                      <div className="text-[10px] text-slate-400">DE PROA T &lt; 1,0m (d)</div>
+                      <div className="font-bold text-white text-sm mt-1">
+                        {hydrostatics.K_index === 3 ? `(k) = ${hydrostatics.K_value.toFixed(1)}` : '—'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3ª ETAPA */}
+                <div className="border border-slate-800 rounded-xl overflow-hidden">
+                  <div className="bg-slate-800/80 px-3 py-1.5 text-[11px] font-black uppercase text-slate-300 text-center">
+                    3ª ETAPA — EQUAÇÕES & RESULTADO
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-slate-800 text-center font-mono text-xs">
+                    <div className="p-2">
+                      <div className="text-[10px] text-slate-400">1º CÁLCULO (r = c - k)</div>
+                      <div className="font-bold text-amber-400 text-sm mt-1">{hydrostatics.r_value.toFixed(1)}</div>
+                    </div>
+                    <div className="p-2">
+                      <div className="text-[10px] text-slate-400">2º CÁLCULO (s = r × w)</div>
+                      <div className="font-bold text-emerald-400 text-sm mt-1">{hydrostatics.s_value.toFixed(2)}</div>
+                    </div>
+                    <div className="p-2 bg-emerald-950/20">
+                      <div className="text-[10px] text-slate-400">DESLOCAMENTO (t = c + s)</div>
+                      <div className="font-bold text-white text-sm mt-1">{hydrostatics.t_value.toFixed(2)} t</div>
+                    </div>
+                    <div className="p-2 bg-blue-950/30">
+                      <div className="text-[10px] text-slate-400">GM (p = (v × t) / u)</div>
+                      <div className="font-bold text-blue-300 text-sm mt-1">{hydrostatics.gm.toFixed(4)} m</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Resumo Papeleta */}
+                <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 font-mono text-xs space-y-2">
+                  <div className="text-blue-400 font-bold uppercase text-[11px]">Resumo para Preenchimento da Papeleta:</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-slate-300">
+                    <div>• Calado Vante: <strong className="text-white">{data.draftForward.toFixed(2)}m</strong></div>
+                    <div>• Calado Ré: <strong className="text-white">{data.draftAft.toFixed(2)}m</strong></div>
+                    <div>• Calado Médio: <strong className="text-white">{meanDraft.toFixed(2)}m</strong></div>
+                    <div>• Trim: <strong className="text-amber-400">{Math.abs(trim).toFixed(2)}m {trim < 0 ? 'para ré' : trim > 0 ? 'para vante' : 'a nível'}</strong></div>
+                    <div>• Deslocamento: <strong className="text-emerald-400">{Math.round(hydrostatics.t_value).toLocaleString()} t</strong></div>
+                    <div>• GM: <strong className="text-blue-300">{hydrostatics.gm.toFixed(4)} m</strong></div>
+                    <div>• Grau de Banda: <strong className="text-white">{Math.abs(data.heel).toFixed(1)}° {data.heel > 0 ? 'BE' : data.heel < 0 ? 'BB' : 'Centro'}</strong></div>
+                    <div>• Status: <strong className={gmStatus.color}>{gmStatus.label}</strong></div>
+                  </div>
                 </div>
               </div>
 
-              {/* 2. Deslocamento */}
+              {/* Tabela Hidrostática Completa para Consulta */}
               <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5">
-                <div className="flex items-center gap-2 text-indigo-400 font-black text-sm uppercase mb-2">
-                  <Gauge size={16} />
-                  <span>2. Cálculo do Deslocamento com Correção de Trim</span>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-black uppercase text-indigo-400 flex items-center gap-2">
+                    <BookOpen size={16} /> Tabela Hidrostática Completa (5.0m a 7.5m)
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-mono">26 Linhas de Calado</span>
                 </div>
-                <p className="text-xs text-slate-300 mb-3">
-                  O deslocamento é calculado através da Tabela Hidrostática de 4 colunas do A140:
-                </p>
-                <div className="space-y-2 font-mono text-xs text-slate-200 bg-slate-900 p-3.5 rounded-xl border border-slate-800">
-                  <p>1. Busca-se o valor <strong className="text-amber-400">C</strong> (deslocamento base) e <strong className="text-amber-400">K</strong> (coluna ajustada ao trim) interpolando para o Calado Médio (Tm).</p>
-                  <p>2. Calcula-se o fator de inclinação: <strong className="text-amber-400">T = C - K</strong></p>
-                  <p>3. Calcula-se a Correção de Trim: <strong className="text-amber-400">S = T × Trim</strong></p>
-                  <p>4. Deslocamento Final: <strong className="text-emerald-400">Deslocamento = C + S</strong></p>
-                </div>
-              </div>
-
-              {/* 3. Variação da Densidade da Água */}
-              <div className="bg-amber-950/30 border border-amber-500/30 rounded-2xl p-4 sm:p-5">
-                <div className="flex items-center gap-2 text-amber-400 font-black text-sm uppercase mb-2">
-                  <Droplets size={16} />
-                  <span>3. Influência da Densidade da Água (Água Salgada vs. Água Doce)</span>
-                </div>
-                <div className="space-y-3 text-xs text-slate-300">
-                  <p>
-                    <strong>Densidade Padrão da Tabela Hidrostática:</strong> As tabelas hidrostáticas da Marinha são calibradas para <span className="text-amber-300 font-bold">Água Salgada (ρ = 1,025 t/m³)</span>.
-                  </p>
-                  <p>
-                    <strong>Em Água Doce (ρ = 1,000 t/m³):</strong> Como a água doce é 2,5% menos densa que a água salgada:
-                  </p>
-                  <ul className="list-disc list-inside space-y-1.5 pl-2 font-mono text-slate-200">
-                    <li>
-                      <strong className="text-amber-400">No mesmo Calado Lido:</strong> O navio desloca a mesma quantidade de volume de água, mas a massa/peso flutuante real é <strong className="text-emerald-400">2,5% menor</strong>.
-                      <div className="text-[11px] text-slate-400 pl-4">Fórmula: Desloc_Doce = Desloc_Salgada × (1,000 / 1,025) ≈ Desloc_Salgada × 0,9756</div>
-                    </li>
-                    <li>
-                      <strong className="text-amber-400">Com o mesmo Peso de Carga:</strong> Para manter o mesmo peso em água doce, o navio precisa afundar mais (deslocar mais volume de água) gerando o chamado <strong className="text-emerald-400">Aumento por Água Doce (FWA - Fresh Water Allowance)</strong>:
-                      <div className="text-[11px] text-slate-400 pl-4">FWA (cm) = Deslocamento / (40 × TPC)</div>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* 4. Altura Metacêntrica GM */}
-              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5">
-                <div className="flex items-center gap-2 text-emerald-400 font-black text-sm uppercase mb-2">
-                  <Anchor size={16} />
-                  <span>4. Altura Metacêntrica (GM)</span>
-                </div>
-                <p className="text-xs text-slate-300 mb-2">
-                  A altura metacêntrica inicial (GM) no A140 é obtida pela relação dos momentos metacêntricos da curva do navio:
-                </p>
-                <div className="space-y-2 font-mono text-xs text-slate-200 bg-slate-900 p-3.5 rounded-xl border border-slate-800">
-                  <p className="text-emerald-400 font-bold">GM = (V × Deslocamento) / u</p>
-                  <p className="text-slate-400 text-[11px]">Onde V e u são parâmetros característicos do A140:</p>
-                  <ul className="list-disc list-inside text-slate-300 text-[11px] pl-2 space-y-1">
-                    <li><strong>Estado Carregado (Deslocamento &gt; 20.000 t):</strong> V = 2.703 e u = 21.490 t</li>
-                    <li><strong>Estado Leve (Deslocamento ≤ 20.000 t):</strong> V = 2.561 e u = 17.718 t</li>
-                  </ul>
+                <div className="max-h-60 overflow-y-auto border border-slate-800 rounded-xl">
+                  <table className="w-full text-left font-mono text-[11px]">
+                    <thead className="bg-slate-900 text-slate-400 sticky top-0 border-b border-slate-800">
+                      <tr>
+                        <th className="p-2">CM (m)</th>
+                        <th className="p-2">DE RÉ (1.0 ≤ T &lt; 2.0)</th>
+                        <th className="p-2">DE RÉ (T &lt; 1.0)</th>
+                        <th className="p-2 text-indigo-400">NÍVEL</th>
+                        <th className="p-2">DE PROA (T &lt; 1.0)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800 text-slate-300">
+                      {hydrostaticTable.map((row) => {
+                        const isCurrentRow = Math.abs(row.draft - meanDraft) < 0.05;
+                        return (
+                          <tr key={row.draft} className={isCurrentRow ? 'bg-blue-600/20 font-bold text-white' : 'hover:bg-slate-900/50'}>
+                            <td className="p-2 font-bold text-blue-400">{row.draft.toFixed(1)}</td>
+                            <td className="p-2">{row.valores[0].toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 3 })}</td>
+                            <td className="p-2">{row.valores[1].toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
+                            <td className="p-2 text-indigo-300 font-bold">{row.valores[2].toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
+                            <td className="p-2">{row.valores[3].toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
