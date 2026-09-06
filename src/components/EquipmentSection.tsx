@@ -27,8 +27,10 @@ interface Props {
   onStatusChange: (name: string) => void;
   locations?: Record<string, string>;
   customEquipments?: CustomEquipment[];
+  removedEquipments?: string[];
   onAddEquipment?: (equipment: CustomEquipment, initialStatus: EquipmentStatus) => void;
   onDeleteEquipment?: (name: string) => void;
+  onRestoreEquipment?: (name: string) => void;
 }
 
 const SnowLayer: React.FC = () => {
@@ -64,12 +66,15 @@ const EquipmentSection: React.FC<Props> = ({
   onStatusChange,
   locations,
   customEquipments,
+  removedEquipments,
   onAddEquipment,
-  onDeleteEquipment
+  onDeleteEquipment,
+  onRestoreEquipment
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | EquipmentStatus>('ALL');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [modalTab, setModalTab] = useState<'add' | 'delete'>('add');
 
   const activeLocations = useMemo(() => {
     return locations || EQUIPMENT_LOCATIONS;
@@ -191,16 +196,35 @@ const EquipmentSection: React.FC<Props> = ({
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
-            {onAddEquipment && (
-              <button
-                type="button"
-                onClick={() => setIsAddModalOpen(true)}
-                className="px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer whitespace-nowrap shrink-0 border border-blue-400/30"
-              >
-                <Plus size={16} />
-                <span>Novo Equipamento</span>
-              </button>
-            )}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {onAddEquipment && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModalTab('add');
+                    setIsAddModalOpen(true);
+                  }}
+                  className="px-3 sm:px-4 py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-all active:scale-95 cursor-pointer whitespace-nowrap border border-blue-400/30"
+                >
+                  <Plus size={16} />
+                  <span>Novo Equipamento</span>
+                </button>
+              )}
+
+              {onDeleteEquipment && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModalTab('delete');
+                    setIsAddModalOpen(true);
+                  }}
+                  className="px-3 sm:px-4 py-2.5 sm:py-3 bg-slate-950 hover:bg-red-950/40 text-slate-300 hover:text-red-300 hover:border-red-500/50 font-black text-xs uppercase tracking-wider rounded-xl shadow-md flex items-center justify-center gap-1.5 sm:gap-2 transition-all active:scale-95 cursor-pointer whitespace-nowrap border border-slate-800"
+                >
+                  <Trash2 size={15} className="text-red-400" />
+                  <span>Excluir Equipamento</span>
+                </button>
+              )}
+            </div>
 
             <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
               <button
@@ -290,26 +314,9 @@ const EquipmentSection: React.FC<Props> = ({
                     {showSnow && <SnowLayer />}
 
                     <div className="flex justify-between items-start relative z-10 w-full mb-2">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-black uppercase opacity-90 text-[8px] sm:text-xs lg:text-xl bg-black/40 px-2 py-1 sm:px-4 sm:py-2 rounded-lg lg:rounded-xl border border-white/10 shadow-lg">
-                          #{activeLocations[item] || '??'}
-                        </span>
-                        {isCustom && onDeleteEquipment && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (confirm(`Remover o equipamento personalizado "${item}"?`)) {
-                                onDeleteEquipment(item);
-                              }
-                            }}
-                            className="p-1 sm:p-1.5 bg-black/60 hover:bg-red-600 text-slate-300 hover:text-white rounded-lg transition-colors border border-white/10 shadow-lg"
-                            title="Remover equipamento personalizado"
-                          >
-                            <Trash2 size={12} className="sm:w-3.5 sm:h-3.5" />
-                          </button>
-                        )}
-                      </div>
+                      <span className="font-black uppercase opacity-90 text-[8px] sm:text-xs lg:text-xl bg-black/40 px-2 py-1 sm:px-4 sm:py-2 rounded-lg lg:rounded-xl border border-white/10 shadow-lg">
+                        #{activeLocations[item] || '??'}
+                      </span>
                       <div className="bg-white/10 p-1 lg:p-2 rounded-lg lg:rounded-2xl shrink-0">
                         {getIcon(item, status, true)}
                       </div>
@@ -342,10 +349,14 @@ const EquipmentSection: React.FC<Props> = ({
         <AddEquipmentModal
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
+          initialTab={modalTab}
           categories={categories}
           customEquipments={customEquipments || []}
+          removedEquipments={removedEquipments}
+          locations={activeLocations}
           onAddEquipment={onAddEquipment}
           onDeleteEquipment={onDeleteEquipment}
+          onRestoreEquipment={onRestoreEquipment}
         />
       )}
     </div>

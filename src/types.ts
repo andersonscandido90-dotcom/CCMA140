@@ -138,6 +138,7 @@ export interface DailyReport {
   phoneDirectory?: ExtensionEntry[];
   theme?: string;
   customEquipments?: CustomEquipment[];
+  removedEquipments?: string[];
 }
 
 export interface EquipmentCategory {

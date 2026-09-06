@@ -48,6 +48,7 @@ export default function BackupManagerModal({ currentDate, onSelectDate, onClose 
       master_isis: localStorage.getItem('master_isis_overrides') || '{}',
       service_notes: localStorage.getItem('service_notes') || '',
       custom_equipments: localStorage.getItem('custom_equipments') || '[]',
+      removed_equipments: localStorage.getItem('removed_equipments') || '[]',
       theme: localStorage.getItem('app_theme') || 'bg-slate-950',
     };
 
@@ -98,6 +99,7 @@ export default function BackupManagerModal({ currentDate, onSelectDate, onClose 
         if (json.master_isis) localStorage.setItem('master_isis_overrides', typeof json.master_isis === 'string' ? json.master_isis : JSON.stringify(json.master_isis));
         if (json.service_notes) localStorage.setItem('service_notes', json.service_notes);
         if (json.custom_equipments) localStorage.setItem('custom_equipments', typeof json.custom_equipments === 'string' ? json.custom_equipments : JSON.stringify(json.custom_equipments));
+        if (json.removed_equipments) localStorage.setItem('removed_equipments', typeof json.removed_equipments === 'string' ? json.removed_equipments : JSON.stringify(json.removed_equipments));
 
         loadSavedReports();
         setMsg({ text: `Backup restaurado com sucesso! (${count} relatórios importados)`, type: 'success' });

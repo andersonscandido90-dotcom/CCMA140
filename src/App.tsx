@@ -274,7 +274,8 @@ const initializeAppData = () => {
       corteSoldaList: [],
       logs: [],
       serviceNotes: localStorage.getItem('service_notes') || '',
-      customEquipments: []
+      customEquipments: [],
+      removedEquipments: []
     };
   } else {
     // Garante que serviceNotes exista, senão tenta recuperar do localStorage antigo
@@ -293,6 +294,14 @@ const initializeAppData = () => {
         report.customEquipments = savedCustom ? JSON.parse(savedCustom) : [];
       } catch (e) {
         report.customEquipments = [];
+      }
+    }
+    if (!report.removedEquipments) {
+      try {
+        const savedRemoved = localStorage.getItem('removed_equipments');
+        report.removedEquipments = savedRemoved ? JSON.parse(savedRemoved) : [];
+      } catch (e) {
+        report.removedEquipments = [];
       }
     }
   }
@@ -325,6 +334,15 @@ const App: React.FC = () => {
     }
     return initialReport.customEquipments || [];
   });
+  const [removedEquipments, setRemovedEquipments] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('removed_equipments');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('Erro ao ler removed_equipments', e);
+    }
+    return initialReport.removedEquipments || [];
+  });
   const [view, setView] = useState<'menu-inicial' | 'equipment' | 'fuel' | 'stability' | 'personnel' | 'tv-mode' | 'eductors' | 'cav' | 'restrictions' | 'isis' | 'aguada' | 'phonebook'>('menu-inicial');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentTvSlide, setCurrentTvSlide] = useState(0);
@@ -335,14 +353,18 @@ const App: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Categorias dinâmicas mesclando as estáticas com os novos equipamentos adicionados
+  // Categorias dinâmicas mesclando as estáticas com os novos equipamentos adicionados, excluindo os removidos
   const allCategories: EquipmentCategory[] = useMemo(() => {
     const catMap = new Map<string, string[]>();
+    const removedSet = new Set(removedEquipments.map(r => r.toLowerCase()));
+
     CATEGORIES.forEach(c => {
-      catMap.set(c.name, [...c.items]);
+      const items = c.items.filter(item => !removedSet.has(item.toLowerCase()));
+      catMap.set(c.name, items);
     });
 
     customEquipments.forEach(eq => {
+      if (removedSet.has(eq.name.toLowerCase())) return;
       if (!catMap.has(eq.category)) {
         catMap.set(eq.category, []);
       }
@@ -352,8 +374,10 @@ const App: React.FC = () => {
       }
     });
 
-    return Array.from(catMap.entries()).map(([name, items]) => ({ name, items }));
-  }, [customEquipments]);
+    return Array.from(catMap.entries())
+      .map(([name, items]) => ({ name, items }))
+      .filter(c => c.items.length > 0);
+  }, [customEquipments, removedEquipments]);
 
   // Localizações dinâmicas mesclando as estáticas com os novos equipamentos
   const allLocations: Record<string, string> = useMemo(() => {
@@ -373,6 +397,11 @@ const App: React.FC = () => {
     setCustomEquipments(nextList);
     localStorage.setItem('custom_equipments', JSON.stringify(nextList));
 
+    // Se estava na lista de removidos, remove para reaparecer
+    const nextRemoved = removedEquipments.filter(r => r.toLowerCase() !== newEquip.name.toLowerCase());
+    setRemovedEquipments(nextRemoved);
+    localStorage.setItem('removed_equipments', JSON.stringify(nextRemoved));
+
     const nextEquipment = { ...equipmentData, [newEquip.name]: initialStatus };
     const newLog: LogEntry = {
       id: Math.random().toString(36).substr(2, 9),
@@ -386,22 +415,53 @@ const App: React.FC = () => {
     saveData({
       equipment: nextEquipment,
       customEquipments: nextList,
+      removedEquipments: nextRemoved,
       logs: [...logs, newLog]
     });
   };
 
-  // Handler para remover equipamento personalizado
-  const handleDeleteCustomEquipment = (nameToDelete: string) => {
-    const nextList = customEquipments.filter(e => e.name.toLowerCase() !== nameToDelete.toLowerCase());
-    setCustomEquipments(nextList);
-    localStorage.setItem('custom_equipments', JSON.stringify(nextList));
+  // Handler para remover equipamento (tanto personalizado quanto padrão)
+  const handleDeleteEquipment = (nameToDelete: string) => {
+    const isCustom = customEquipments.some(e => e.name.toLowerCase() === nameToDelete.toLowerCase());
+    let nextCustom = customEquipments;
+    if (isCustom) {
+      nextCustom = customEquipments.filter(e => e.name.toLowerCase() !== nameToDelete.toLowerCase());
+      setCustomEquipments(nextCustom);
+      localStorage.setItem('custom_equipments', JSON.stringify(nextCustom));
+    }
+
+    const nextRemoved = Array.from(new Set([...removedEquipments, nameToDelete]));
+    setRemovedEquipments(nextRemoved);
+    localStorage.setItem('removed_equipments', JSON.stringify(nextRemoved));
 
     const nextEquipment = { ...equipmentData };
     delete nextEquipment[nameToDelete];
 
+    const newLog: LogEntry = {
+      id: Math.random().toString(36).substr(2, 9),
+      item: nameToDelete,
+      timestamp: new Date().toISOString(),
+      oldStatus: equipmentData[nameToDelete] || EquipmentStatus.AVAILABLE,
+      newStatus: EquipmentStatus.UNAVAILABLE,
+      user: 'EQUIPAMENTO EXCLUÍDO'
+    };
+
     saveData({
       equipment: nextEquipment,
-      customEquipments: nextList
+      customEquipments: nextCustom,
+      removedEquipments: nextRemoved,
+      logs: [...logs, newLog]
+    });
+  };
+
+  // Handler para restaurar equipamento excluído
+  const handleRestoreEquipment = (nameToRestore: string) => {
+    const nextRemoved = removedEquipments.filter(r => r.toLowerCase() !== nameToRestore.toLowerCase());
+    setRemovedEquipments(nextRemoved);
+    localStorage.setItem('removed_equipments', JSON.stringify(nextRemoved));
+
+    saveData({
+      removedEquipments: nextRemoved
     });
   };
 
@@ -460,6 +520,10 @@ const App: React.FC = () => {
             return merged;
           });
         }
+        if (data.removedEquipments && Array.isArray(data.removedEquipments)) {
+          setRemovedEquipments(data.removedEquipments);
+          localStorage.setItem('removed_equipments', JSON.stringify(data.removedEquipments));
+        }
         setLogs(data.logs || []);
         setServiceNotes(data.serviceNotes || localStorage.getItem('service_notes') || '');
         console.log('✅ Dados carregados para', newDate);
@@ -495,7 +559,8 @@ const App: React.FC = () => {
       phoneDirectory,
       logs,
       serviceNotes,
-      customEquipments
+      customEquipments,
+      removedEquipments
     };
     localStorage.setItem(`report_${selectedDate}`, JSON.stringify(report));
     console.log('💾 Relatório salvo:', selectedDate);
@@ -506,6 +571,7 @@ const App: React.FC = () => {
     let nextFuel = updates.fuel !== undefined ? updates.fuel : fuelData;
     let nextAguada = updates.aguada !== undefined ? updates.aguada : aguadaData;
     let nextCustomEquipments = updates.customEquipments !== undefined ? updates.customEquipments : customEquipments;
+    let nextRemovedEquipments = updates.removedEquipments !== undefined ? updates.removedEquipments : removedEquipments;
 
     // Sincronização 1: Atualizar Cargas (Aba Fuel -> water) com o valor da Sondagem Atual (C) do Aguada
     if (updates.aguada && updates.aguada.tanquesAtuais) {
@@ -549,6 +615,10 @@ const App: React.FC = () => {
       setCustomEquipments(updates.customEquipments);
       localStorage.setItem('custom_equipments', JSON.stringify(updates.customEquipments));
     }
+    if (updates.removedEquipments) {
+      setRemovedEquipments(updates.removedEquipments);
+      localStorage.setItem('removed_equipments', JSON.stringify(updates.removedEquipments));
+    }
     if (updates.phoneDirectory) {
       setPhoneDirectory(updates.phoneDirectory);
       localStorage.setItem('ship_phone_directory', JSON.stringify(updates.phoneDirectory));
@@ -577,7 +647,8 @@ const App: React.FC = () => {
       phoneDirectory: updates.phoneDirectory !== undefined ? updates.phoneDirectory : phoneDirectory,
       logs: updates.logs !== undefined ? updates.logs : logs,
       serviceNotes: updates.serviceNotes !== undefined ? updates.serviceNotes : serviceNotes,
-      customEquipments: nextCustomEquipments
+      customEquipments: nextCustomEquipments,
+      removedEquipments: nextRemovedEquipments
     };
     localStorage.setItem(`report_${selectedDate}`, JSON.stringify(report));
     console.log('💾 Relatório atualizado e salvo:', selectedDate);
@@ -662,7 +733,8 @@ const App: React.FC = () => {
       phoneDirectory,
       logs,
       serviceNotes,
-      customEquipments
+      customEquipments,
+      removedEquipments
     };
     const blob = new Blob([JSON.stringify(relatorio, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -710,6 +782,10 @@ const App: React.FC = () => {
           if (dados.customEquipments && Array.isArray(dados.customEquipments)) {
             setCustomEquipments(dados.customEquipments);
             localStorage.setItem('custom_equipments', JSON.stringify(dados.customEquipments));
+          }
+          if (dados.removedEquipments && Array.isArray(dados.removedEquipments)) {
+            setRemovedEquipments(dados.removedEquipments);
+            localStorage.setItem('removed_equipments', JSON.stringify(dados.removedEquipments));
           }
           if (dados.phoneDirectory) {
             setPhoneDirectory(dados.phoneDirectory);
@@ -773,10 +849,12 @@ const App: React.FC = () => {
               categories={allCategories} 
               locations={allLocations}
               customEquipments={customEquipments}
+              removedEquipments={removedEquipments}
               data={equipmentData} 
               onStatusChange={handleStatusChange} 
               onAddEquipment={handleAddEquipment}
-              onDeleteEquipment={handleDeleteCustomEquipment}
+              onDeleteEquipment={handleDeleteEquipment}
+              onRestoreEquipment={handleRestoreEquipment}
             />
           )}
           {currentTvSlide === 2 && <FuelPanel fuel={fuelData} fullWidth onChange={(k, v) => saveData({ fuel: {...fuelData, [k]: v}})} />}
@@ -849,7 +927,8 @@ const App: React.FC = () => {
           corteSoldaList,
           logs,
           serviceNotes,
-          customEquipments
+          customEquipments,
+          removedEquipments
         }}
         categories={allCategories}
         onClose={() => setShowPrintView(false)}
@@ -873,7 +952,8 @@ const App: React.FC = () => {
           corteSoldaList,
           logs,
           serviceNotes,
-          customEquipments
+          customEquipments,
+          removedEquipments
         }}
         onClose={() => setShowSupervisionPrintView(false)}
       />
@@ -1008,10 +1088,12 @@ const App: React.FC = () => {
               categories={allCategories} 
               locations={allLocations}
               customEquipments={customEquipments}
+              removedEquipments={removedEquipments}
               data={equipmentData} 
               onStatusChange={handleStatusChange} 
               onAddEquipment={handleAddEquipment}
-              onDeleteEquipment={handleDeleteCustomEquipment}
+              onDeleteEquipment={handleDeleteEquipment}
+              onRestoreEquipment={handleRestoreEquipment}
             />
           )}
           {view === 'fuel' && <FuelPanel fuel={fuelData} fullWidth onChange={(k, v) => saveData({ fuel: {...fuelData, [k]: v}})} />}
