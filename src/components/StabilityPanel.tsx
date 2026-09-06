@@ -1,6 +1,7 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { StabilityData, FuelData } from '../types';
 import { Compass, MoveVertical, Anchor, Gauge, Ship, Activity, AlertCircle, CheckCircle2, HelpCircle, X, BookOpen, Calculator, Droplets } from 'lucide-react';
+import { formatPrecisionNumber } from './FuelPanel';
 
 interface Props {
   data: StabilityData;
@@ -202,7 +203,7 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange }) => {
     if (Math.abs(hydrostatics.gm - data.gm) > 0.001) {
       onChange('gm', hydrostatics.gm);
     }
-    if (Math.abs(hydrostatics.displacement - data.displacement) > 0.1) {
+    if (Math.abs(hydrostatics.displacement - data.displacement) > 0.001) {
       onChange('displacement', hydrostatics.displacement);
     }
   }, [hydrostatics.gm, hydrostatics.displacement, data.gm, data.displacement, onChange]);
@@ -314,7 +315,7 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange }) => {
           </div>
           <div className="bg-indigo-600/10 border-2 border-indigo-500/20 rounded-xl sm:rounded-2xl px-4 py-2 sm:px-6 sm:py-4 text-center">
             <p className="font-black text-indigo-400 uppercase text-[8px] sm:text-[10px] mb-1 tracking-widest">DESLOCAMENTO</p>
-            <p className="font-black text-white text-xl sm:text-3xl lg:text-4xl">{Math.round(displayDisplacement).toLocaleString()}t</p>
+            <p className="font-black text-white text-xl sm:text-3xl lg:text-4xl">{formatPrecisionNumber(displayDisplacement, 3)} t</p>
           </div>
         </div>
       </div>
@@ -430,7 +431,7 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange }) => {
             </div>
             <div className="flex items-center gap-2">
               <span className="font-black text-white text-lg sm:text-2xl">
-                {Math.round(displayDisplacement).toLocaleString()}
+                {formatPrecisionNumber(displayDisplacement, 3)}
               </span>
               <span className="text-slate-500 font-black uppercase text-[10px]">t</span>
             </div>
@@ -555,7 +556,7 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange }) => {
               <div className="flex justify-between text-slate-300 font-mono text-[11px]">
                 <span>Desloc. (t = c + s):</span>
                 <span className="font-bold text-white text-xs">
-                  {hydrostatics.t_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} t
+                  {formatPrecisionNumber(hydrostatics.t_value, 3)} t
                 </span>
               </div>
               <div className="flex justify-between text-slate-300 font-mono text-[11px] pt-1 border-t border-slate-800">
@@ -563,7 +564,7 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange }) => {
                 <span className="font-bold text-emerald-300 text-xs">{hydrostatics.gm.toFixed(4)} m</span>
               </div>
               <div className="text-[10px] text-slate-500 font-mono">
-                p = ({hydrostatics.v_value.toFixed(3)} × {Math.round(hydrostatics.t_value).toLocaleString()}) / {hydrostatics.u_value}
+                p = ({hydrostatics.v_value.toFixed(3)} × {formatPrecisionNumber(hydrostatics.t_value, 3)}) / {hydrostatics.u_value}
               </div>
             </div>
           </div>
@@ -704,7 +705,7 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange }) => {
                     </div>
                     <div className="p-2 bg-emerald-950/20">
                       <div className="text-[10px] text-slate-400">DESLOCAMENTO (t = c + s)</div>
-                      <div className="font-bold text-white text-sm mt-1">{hydrostatics.t_value.toFixed(2)} t</div>
+                      <div className="font-bold text-white text-sm mt-1">{formatPrecisionNumber(hydrostatics.t_value, 3)} t</div>
                     </div>
                     <div className="p-2 bg-blue-950/30">
                       <div className="text-[10px] text-slate-400">GM (p = (v × t) / u)</div>
@@ -721,7 +722,7 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange }) => {
                     <div>• Calado Ré: <strong className="text-white">{data.draftAft.toFixed(2)}m</strong></div>
                     <div>• Calado Médio: <strong className="text-white">{meanDraft.toFixed(2)}m</strong></div>
                     <div>• Trim: <strong className="text-amber-400">{Math.abs(trim).toFixed(2)}m {trim < 0 ? 'para ré' : trim > 0 ? 'para vante' : 'a nível'}</strong></div>
-                    <div>• Deslocamento: <strong className="text-emerald-400">{Math.round(hydrostatics.t_value).toLocaleString()} t</strong></div>
+                    <div>• Deslocamento: <strong className="text-emerald-400">{formatPrecisionNumber(hydrostatics.t_value, 3)} t</strong></div>
                     <div>• GM: <strong className="text-blue-300">{hydrostatics.gm.toFixed(4)} m</strong></div>
                     <div>• Grau de Banda: <strong className="text-white">{Math.abs(data.heel).toFixed(1)}° {data.heel > 0 ? 'BE' : data.heel < 0 ? 'BB' : 'Centro'}</strong></div>
                     <div>• Status: <strong className={gmStatus.color}>{gmStatus.label}</strong></div>

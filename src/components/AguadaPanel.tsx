@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { AguadaData, HidrometroEntry, TanqueAguadaEntry, EquipmentData, EquipmentStatus, PersonnelData } from '../types';
 import { SHIP_CONFIG } from '../constants';
+import { formatPrecisionNumber, cleanNumberInput } from './FuelPanel';
 
 function ShipLogo({ className = "w-12 h-12" }: { className?: string }) {
   const [imgError, setImgError] = useState(false);
@@ -343,7 +344,7 @@ export default function AguadaPanel({
           </div>
           <div className="flex items-baseline gap-1 mt-1">
             <span className="text-2xl sm:text-3xl font-black text-white">
-              {typeof currentData.sondagemAnterior === 'number' ? currentData.sondagemAnterior.toFixed(1) : '0.0'}
+              {typeof currentData.sondagemAnterior === 'number' ? formatPrecisionNumber(currentData.sondagemAnterior) : '0'}
             </span>
             <span className="text-xs font-bold text-slate-400">m³</span>
           </div>
@@ -364,7 +365,7 @@ export default function AguadaPanel({
           </div>
           <div className="flex items-baseline gap-1 mt-1">
             <span className="text-2xl sm:text-3xl font-black text-emerald-400">
-              +{totalRecebidoB.toFixed(1)}
+              +{formatPrecisionNumber(totalRecebidoB)}
             </span>
             <span className="text-xs font-bold text-slate-400">m³</span>
           </div>
@@ -385,9 +386,9 @@ export default function AguadaPanel({
           </div>
           <div className="flex items-baseline gap-1 mt-1">
             <span className="text-2xl sm:text-3xl font-black text-cyan-400">
-              {totalGeralC.toFixed(1)}
+              {formatPrecisionNumber(totalGeralC)}
             </span>
-            <span className="text-xs font-bold text-slate-400">/ {capacidadeTotalTanques.toFixed(1)} m³</span>
+            <span className="text-xs font-bold text-slate-400">/ {formatPrecisionNumber(capacidadeTotalTanques)} m³</span>
           </div>
           <div className="w-full bg-slate-800 rounded-full h-1.5 mt-2 overflow-hidden">
             <div 
@@ -413,7 +414,7 @@ export default function AguadaPanel({
           </div>
           <div className="flex items-baseline gap-1 mt-1">
             <span className="text-2xl sm:text-3xl font-black text-white">
-              {consumoTotal.toFixed(1)}
+              {formatPrecisionNumber(consumoTotal)}
             </span>
             <span className="text-xs font-bold text-blue-300">m³</span>
           </div>
@@ -520,12 +521,20 @@ export default function AguadaPanel({
                 </div>
                 <input
                   type="number"
-                  step="0.1"
+                  step="any"
                   min="0"
                   value={currentData.sondagemAnterior}
-                  onChange={(e) => updateField({ 
-                    sondagemAnterior: e.target.value === '' ? '' : parseFloat(e.target.value) || 0 
-                  })}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    const cleaned = cleanNumberInput(raw);
+                    if (cleaned === '' || cleaned === '.' || cleaned === ',') {
+                      updateField({ sondagemAnterior: '' });
+                      return;
+                    }
+                    const num = parseFloat(cleaned.replace(',', '.'));
+                    updateField({ sondagemAnterior: isNaN(num) ? '' : num });
+                  }}
                   placeholder="Ex: 150.0"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-base font-black text-white focus:border-amber-500 outline-none transition-all"
                 />
@@ -583,9 +592,19 @@ export default function AguadaPanel({
                         <td className="py-2 px-2">
                           <input
                             type="number"
-                            step="0.1"
+                            step="any"
                             value={item.inicio}
-                            onChange={(e) => handleHidrometroChange(idx, 'inicio', e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              const cleaned = cleanNumberInput(raw);
+                              if (cleaned === '' || cleaned === '.' || cleaned === ',') {
+                                handleHidrometroChange(idx, 'inicio', '');
+                                return;
+                              }
+                              const num = parseFloat(cleaned.replace(',', '.'));
+                              handleHidrometroChange(idx, 'inicio', isNaN(num) ? '' : num);
+                            }}
                             placeholder="0.0"
                             className="w-full bg-slate-950 border border-slate-800 rounded-lg py-1.5 px-2 text-xs font-bold text-white text-right focus:border-emerald-500 outline-none"
                           />
@@ -593,15 +612,25 @@ export default function AguadaPanel({
                         <td className="py-2 px-2">
                           <input
                             type="number"
-                            step="0.1"
+                            step="any"
                             value={item.fim}
-                            onChange={(e) => handleHidrometroChange(idx, 'fim', e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              const cleaned = cleanNumberInput(raw);
+                              if (cleaned === '' || cleaned === '.' || cleaned === ',') {
+                                handleHidrometroChange(idx, 'fim', '');
+                                return;
+                              }
+                              const num = parseFloat(cleaned.replace(',', '.'));
+                              handleHidrometroChange(idx, 'fim', isNaN(num) ? '' : num);
+                            }}
                             placeholder="0.0"
                             className="w-full bg-slate-950 border border-slate-800 rounded-lg py-1.5 px-2 text-xs font-bold text-white text-right focus:border-emerald-500 outline-none"
                           />
                         </td>
                         <td className="py-2 px-2 text-right font-black text-emerald-400">
-                          {diff > 0 ? `+${diff.toFixed(1)}` : '0.0'}
+                          {diff > 0 ? `+${formatPrecisionNumber(diff)}` : '0'}
                         </td>
                         <td className="py-2 px-1 text-center">
                           <button
@@ -625,7 +654,7 @@ export default function AguadaPanel({
                 TOTAL RECEBIDO (B)
               </span>
               <span className="text-base font-black text-emerald-400 font-mono">
-                +{totalRecebidoB.toFixed(1)} m³
+                +{formatPrecisionNumber(totalRecebidoB)} m³
               </span>
             </div>
           </div>
@@ -689,16 +718,26 @@ export default function AguadaPanel({
                           </div>
                         </td>
                         <td className="py-2.5 px-2 text-center font-bold text-slate-400">
-                          {item.capacidadeMax.toFixed(2)}
+                          {formatPrecisionNumber(item.capacidadeMax, 2)}
                         </td>
                         <td className="py-2.5 px-2">
                           <input
                             type="number"
-                            step="0.1"
+                            step="any"
                             min="0"
                             max={item.capacidadeMax}
                             value={item.sondagem}
-                            onChange={(e) => handleTanqueSondagemChange(idx, e.target.value === '' ? '' : parseFloat(e.target.value) || 0)}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              const cleaned = cleanNumberInput(raw);
+                              if (cleaned === '' || cleaned === '.' || cleaned === ',') {
+                                handleTanqueSondagemChange(idx, '');
+                                return;
+                              }
+                              const num = parseFloat(cleaned.replace(',', '.'));
+                              handleTanqueSondagemChange(idx, isNaN(num) ? '' : num);
+                            }}
                             placeholder="0.0"
                             className="w-full bg-slate-950 border border-slate-800 rounded-lg py-1.5 px-2 text-xs font-black text-cyan-300 text-right focus:border-cyan-500 outline-none"
                           />
@@ -708,14 +747,14 @@ export default function AguadaPanel({
                             <span className={`font-black text-[11px] ${
                               pct > 80 ? 'text-emerald-400' : pct > 30 ? 'text-cyan-400' : 'text-amber-400'
                             }`}>
-                              {pct.toFixed(0)}%
+                              {pct >= 100 ? '100%' : (pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)) + '%'}
                             </span>
                             <div className="w-12 bg-slate-800 rounded-full h-1 mt-0.5 overflow-hidden">
                               <div 
                                 className={`h-full rounded-full ${
                                   pct > 80 ? 'bg-emerald-400' : pct > 30 ? 'bg-cyan-400' : 'bg-amber-400'
                                 }`} 
-                                style={{ width: `${pct}%` }}
+                                style={{ width: `${Math.min(pct, 100)}%` }}
                               />
                             </div>
                           </div>
@@ -733,7 +772,7 @@ export default function AguadaPanel({
                 TOTAL GERAL (C) (Sincronizado com Cargas)
               </span>
               <span className="text-base font-black text-cyan-400 font-mono">
-                {totalGeralC.toFixed(1)} / {capacidadeTotalTanques.toFixed(1)} m³
+                {formatPrecisionNumber(totalGeralC)} / {formatPrecisionNumber(capacidadeTotalTanques)} m³
               </span>
             </div>
           </div>
@@ -821,7 +860,7 @@ export default function AguadaPanel({
                   return (
                     <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center text-xs">
                       <span className="text-slate-400 font-bold uppercase">Volume Atual:</span>
-                      <span className="font-mono font-black text-amber-400">{sondagem.toFixed(1)} / {activeTank.capacidadeMax.toFixed(2)} m³ ({pct.toFixed(0)}%)</span>
+                      <span className="font-mono font-black text-amber-400">{formatPrecisionNumber(sondagem)} / {formatPrecisionNumber(activeTank.capacidadeMax, 2)} m³ ({pct.toFixed(0)}%)</span>
                     </div>
                   );
                 })()}
@@ -976,7 +1015,7 @@ export default function AguadaPanel({
               <div className="flex justify-between items-center text-sm font-mono">
                 <span className="font-bold">VOL. ANTERIOR (A):</span>
                 <span className="font-black text-base">
-                  {typeof currentData.sondagemAnterior === 'number' ? `${currentData.sondagemAnterior.toFixed(1)} m³` : '___ m³'}
+                  {typeof currentData.sondagemAnterior === 'number' ? `${formatPrecisionNumber(currentData.sondagemAnterior)} m³` : '___ m³'}
                 </span>
               </div>
             </div>
@@ -1004,9 +1043,9 @@ export default function AguadaPanel({
                     return (
                       <tr key={idx}>
                         <td className="p-1.5 border-r border-gray-400 font-semibold">{item.descricao || `Hidrômetro ${idx + 1}`}</td>
-                        <td className="p-1.5 border-r border-gray-400 text-center">{inicio !== null ? inicio.toFixed(1) : '-'}</td>
-                        <td className="p-1.5 border-r border-gray-400 text-center">{fim !== null ? fim.toFixed(1) : '-'}</td>
-                        <td className="p-1.5 text-right font-bold">{diff !== null ? `+${diff.toFixed(1)}` : '-'}</td>
+                        <td className="p-1.5 border-r border-gray-400 text-center">{inicio !== null ? formatPrecisionNumber(inicio) : '-'}</td>
+                        <td className="p-1.5 border-r border-gray-400 text-center">{fim !== null ? formatPrecisionNumber(fim) : '-'}</td>
+                        <td className="p-1.5 text-right font-bold">{diff !== null ? `+${formatPrecisionNumber(diff)}` : '-'}</td>
                       </tr>
                     );
                   })}
@@ -1015,7 +1054,7 @@ export default function AguadaPanel({
 
               <div className="border-t border-black pt-2 flex justify-between items-center text-xs font-mono font-black bg-gray-100 p-2 rounded">
                 <span>TOTAL RECEBIDO (B):</span>
-                <span className="text-sm">+{totalRecebidoB.toFixed(1)} m³</span>
+                <span className="text-sm">+{formatPrecisionNumber(totalRecebidoB)} m³</span>
               </div>
             </div>
 
@@ -1038,9 +1077,9 @@ export default function AguadaPanel({
                     <tr key={idx}>
                       <td className="p-1.5 border-r border-gray-400 text-center font-bold">{item.posicao}</td>
                       <td className="p-1.5 border-r border-gray-400 font-bold">{item.tanque}</td>
-                      <td className="p-1.5 border-r border-gray-400 text-center font-bold">{item.capacidadeMax.toFixed(2)} m³</td>
+                      <td className="p-1.5 border-r border-gray-400 text-center font-bold">{formatPrecisionNumber(item.capacidadeMax, 2)} m³</td>
                       <td className="p-1.5 text-right font-bold">
-                        {typeof item.sondagem === 'number' ? `${item.sondagem.toFixed(1)} m³` : '-'}
+                        {typeof item.sondagem === 'number' ? `${formatPrecisionNumber(item.sondagem)} m³` : '-'}
                       </td>
                     </tr>
                   ))}
@@ -1049,7 +1088,7 @@ export default function AguadaPanel({
 
               <div className="border-t border-black pt-2 flex justify-between items-center text-xs font-mono font-black bg-gray-100 p-2 rounded">
                 <span>TOTAL GERAL (C):</span>
-                <span className="text-sm">{totalGeralC.toFixed(1)} / {capacidadeTotalTanques.toFixed(1)} m³</span>
+                <span className="text-sm">{formatPrecisionNumber(totalGeralC)} / {formatPrecisionNumber(capacidadeTotalTanques)} m³</span>
               </div>
             </div>
 
@@ -1058,11 +1097,11 @@ export default function AguadaPanel({
               <div className="flex justify-between items-center text-sm font-black font-mono">
                 <span>CONSUMO (A + B - C):</span>
                 <span className="text-base text-black">
-                  {consumoTotal.toFixed(1)} m³
+                  {formatPrecisionNumber(consumoTotal)} m³
                 </span>
               </div>
               <p className="text-[9px] font-sans text-gray-600 mt-1 uppercase font-bold">
-                Cálculo: ({valA.toFixed(1)} + {totalRecebidoB.toFixed(1)} - {totalGeralC.toFixed(1)})
+                Cálculo: ({formatPrecisionNumber(valA)} + {formatPrecisionNumber(totalRecebidoB)} - {formatPrecisionNumber(totalGeralC)})
               </p>
             </div>
 
@@ -1088,7 +1127,7 @@ export default function AguadaPanel({
                     if (!activeTank) return <div><span className="font-bold">Sondagem:</span> ---</div>;
                     const sondagem = typeof activeTank.sondagem === 'number' ? activeTank.sondagem : 0;
                     return (
-                      <div><span className="font-bold">Sondagem:</span> {sondagem.toFixed(1)} / {activeTank.capacidadeMax.toFixed(2)} m³</div>
+                      <div><span className="font-bold">Sondagem:</span> {formatPrecisionNumber(sondagem)} / {formatPrecisionNumber(activeTank.capacidadeMax, 2)} m³</div>
                     );
                   })()}
                 </div>

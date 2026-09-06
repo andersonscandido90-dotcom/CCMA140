@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { DailyReport, EquipmentStatus, EquipmentCategory } from '../types';
 import { CATEGORIES, SHIP_CONFIG, STATUS_CONFIG } from '../constants';
+import { formatPrecisionNumber } from './FuelPanel';
 
 interface Props {
   report: DailyReport;
@@ -79,7 +80,7 @@ function calculateDisplacement(draftForward: number, draftAft: number): number {
   const r = c - k;
   const s = r * trim;
   const t = c + s;
-  return Math.max(0, Math.round(t * 10) / 10);
+  return Math.max(0, t);
 }
 
 export default function PrintReport({ report, categories = CATEGORIES, onClose }: Props) {
@@ -250,23 +251,23 @@ export default function PrintReport({ report, categories = CATEGORIES, onClose }
               <tbody className="divide-y divide-gray-100">
                 <tr>
                   <td className="py-0.5">Água Doce</td>
-                  <td className="py-0.5 text-right font-bold">{report.fuel.water.toFixed(1)}</td>
-                  <td className="py-0.5 text-right">{((report.fuel.water / (report.fuel.maxWater || 1)) * 100).toFixed(0)}%</td>
+                  <td className="py-0.5 text-right font-bold">{formatPrecisionNumber(report.fuel.water)}</td>
+                  <td className="py-0.5 text-right">{((report.fuel.water / (report.fuel.maxWater || 1)) * 100).toFixed(1)}%</td>
                 </tr>
                 <tr>
                   <td className="py-0.5">Óleo Combustível</td>
-                  <td className="py-0.5 text-right font-bold">{report.fuel.fuelOil.toFixed(1)}</td>
-                  <td className="py-0.5 text-right">{((report.fuel.fuelOil / (report.fuel.maxFuelOil || 1)) * 100).toFixed(0)}%</td>
+                  <td className="py-0.5 text-right font-bold">{formatPrecisionNumber(report.fuel.fuelOil)}</td>
+                  <td className="py-0.5 text-right">{((report.fuel.fuelOil / (report.fuel.maxFuelOil || 1)) * 100).toFixed(1)}%</td>
                 </tr>
                 <tr>
                   <td className="py-0.5">Óleo Lubrificante</td>
-                  <td className="py-0.5 text-right font-bold">{report.fuel.lubOil.toFixed(1)}</td>
-                  <td className="py-0.5 text-right">{((report.fuel.lubOil / (report.fuel.maxLubOil || 1)) * 100).toFixed(0)}%</td>
+                  <td className="py-0.5 text-right font-bold">{formatPrecisionNumber(report.fuel.lubOil)}</td>
+                  <td className="py-0.5 text-right">{((report.fuel.lubOil / (report.fuel.maxLubOil || 1)) * 100).toFixed(1)}%</td>
                 </tr>
                 <tr>
                   <td className="py-0.5">JP-5</td>
-                  <td className="py-0.5 text-right font-bold">{report.fuel.jp5.toFixed(1)}</td>
-                  <td className="py-0.5 text-right">{((report.fuel.jp5 / (report.fuel.maxJp5 || 1)) * 100).toFixed(0)}%</td>
+                  <td className="py-0.5 text-right font-bold">{formatPrecisionNumber(report.fuel.jp5)}</td>
+                  <td className="py-0.5 text-right">{((report.fuel.jp5 / (report.fuel.maxJp5 || 1)) * 100).toFixed(1)}%</td>
                 </tr>
               </tbody>
             </table>
@@ -283,15 +284,15 @@ export default function PrintReport({ report, categories = CATEGORIES, onClose }
               </div>
               <div>
                 <span className="text-gray-500 block text-[8px] font-bold uppercase">Água Recebida (B)</span>
-                <span className="font-bold">{totalRecebido.toFixed(1)} m³</span>
+                <span className="font-bold">{formatPrecisionNumber(totalRecebido)} m³</span>
               </div>
               <div>
                 <span className="text-gray-500 block text-[8px] font-bold uppercase">Consumo do Dia</span>
-                <span className="font-bold">{totalConsumo.toFixed(1)} m³</span>
+                <span className="font-bold">{formatPrecisionNumber(totalConsumo)} m³</span>
               </div>
               <div className="col-span-2 border-t border-gray-100 pt-1 mt-0.5 flex justify-between items-center">
                 <span className="text-gray-500 text-[8px] font-bold uppercase">Sondagem Total Atual (C):</span>
-                <span className="font-bold text-blue-900">{totalSondagemAtual.toFixed(1)} m³</span>
+                <span className="font-bold text-blue-900">{formatPrecisionNumber(totalSondagemAtual)} m³</span>
               </div>
             </div>
           </div>
