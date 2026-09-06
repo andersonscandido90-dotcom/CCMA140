@@ -1,9 +1,10 @@
 import React, { useRef, useState } from 'react';
-import { DailyReport, EquipmentStatus } from '../types';
+import { DailyReport, EquipmentStatus, EquipmentCategory } from '../types';
 import { CATEGORIES, SHIP_CONFIG, STATUS_CONFIG } from '../constants';
 
 interface Props {
   report: DailyReport;
+  categories?: EquipmentCategory[];
   onClose?: () => void;
 }
 
@@ -81,7 +82,7 @@ function calculateDisplacement(draftForward: number, draftAft: number): number {
   return Math.max(0, Math.round(t * 10) / 10);
 }
 
-export default function PrintReport({ report, onClose }: Props) {
+export default function PrintReport({ report, categories = CATEGORIES, onClose }: Props) {
   const printSheetRef = useRef<HTMLDivElement>(null);
 
   const [year, month, day] = (report.date || new Date().toISOString().split('T')[0]).split('-');
@@ -302,7 +303,7 @@ export default function PrintReport({ report, onClose }: Props) {
             3. Prontidão dos Equipamentos por Categoria
           </h3>
           <div className="space-y-2">
-            {CATEGORIES.map((cat) => {
+            {categories.map((cat) => {
               const catItems = cat.items;
               return (
                 <div key={cat.name} className="border-b border-gray-100 pb-1.5 last:border-0 last:pb-0">

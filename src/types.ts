@@ -137,9 +137,17 @@ export interface DailyReport {
   corteSoldaList?: CorteSoldaEntry[];
   phoneDirectory?: ExtensionEntry[];
   theme?: string;
+  customEquipments?: CustomEquipment[];
 }
 
 export interface EquipmentCategory {
   name: string;
   items: string[];
+}
+
+export interface CustomEquipment {
+  name: string;
+  category: string;
+  location?: string;
+  createdAt?: string;
 }

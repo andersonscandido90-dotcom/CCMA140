@@ -13,15 +13,22 @@ import {
   Thermometer,
   Search,
   Filter,
-  X
+  X,
+  Plus,
+  Trash2
 } from 'lucide-react';
-import { EquipmentCategory, EquipmentData, EquipmentStatus } from '../types';
+import { EquipmentCategory, EquipmentData, EquipmentStatus, CustomEquipment } from '../types';
 import { STATUS_CONFIG, EQUIPMENT_LOCATIONS } from '../constants';
+import { AddEquipmentModal } from './AddEquipmentModal';
 
 interface Props {
   categories: EquipmentCategory[];
   data: EquipmentData;
   onStatusChange: (name: string) => void;
+  locations?: Record<string, string>;
+  customEquipments?: CustomEquipment[];
+  onAddEquipment?: (equipment: CustomEquipment, initialStatus: EquipmentStatus) => void;
+  onDeleteEquipment?: (name: string) => void;
 }
 
 const SnowLayer: React.FC = () => {
@@ -51,9 +58,26 @@ const SnowLayer: React.FC = () => {
   );
 };
 
-const EquipmentSection: React.FC<Props> = ({ categories, data, onStatusChange }) => {
+const EquipmentSection: React.FC<Props> = ({ 
+  categories, 
+  data, 
+  onStatusChange,
+  locations,
+  customEquipments,
+  onAddEquipment,
+  onDeleteEquipment
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | EquipmentStatus>('ALL');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  const activeLocations = useMemo(() => {
+    return locations || EQUIPMENT_LOCATIONS;
+  }, [locations]);
+
+  const customSet = useMemo(() => {
+    return new Set((customEquipments || []).map(e => e.name.toLowerCase()));
+  }, [customEquipments]);
 
   // Calculates status counters across all equipment
   const counts = useMemo(() => {
@@ -166,38 +190,51 @@ const EquipmentSection: React.FC<Props> = ({ categories, data, onStatusChange })
             )}
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
-            <button
-              onClick={() => setStatusFilter('ALL')}
-              className={`px-3 py-2 rounded-xl text-xs font-black uppercase transition-all whitespace-nowrap flex items-center gap-1.5 ${
-                statusFilter === 'ALL' 
-                  ? 'bg-blue-600 text-white shadow-lg' 
-                  : 'bg-slate-950 text-slate-400 hover:bg-slate-800'
-              }`}
-            >
-              Todos ({counts.total})
-            </button>
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
+            {onAddEquipment && (
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(true)}
+                className="px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer whitespace-nowrap shrink-0 border border-blue-400/30"
+              >
+                <Plus size={16} />
+                <span>Novo Equipamento</span>
+              </button>
+            )}
 
-            {Object.values(EquipmentStatus).map((st) => {
-              const cfg = STATUS_CONFIG[st];
-              const count = counts[st] || 0;
-              const isActive = statusFilter === st;
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
+              <button
+                onClick={() => setStatusFilter('ALL')}
+                className={`px-3 py-2 rounded-xl text-xs font-black uppercase transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                  statusFilter === 'ALL' 
+                    ? 'bg-blue-600 text-white shadow-lg' 
+                    : 'bg-slate-950 text-slate-400 hover:bg-slate-800'
+                }`}
+              >
+                Todos ({counts.total})
+              </button>
 
-              return (
-                <button
-                  key={st}
-                  onClick={() => setStatusFilter(st)}
-                  className={`px-3 py-2 rounded-xl text-xs font-black uppercase transition-all whitespace-nowrap flex items-center gap-1.5 border ${
-                    isActive 
-                      ? `${cfg.bgColor} ${cfg.textColor} ${cfg.borderColor} shadow-md scale-105` 
-                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full ${cfg.bgColor}`} />
-                  {cfg.label} ({count})
-                </button>
-              );
-            })}
+              {Object.values(EquipmentStatus).map((st) => {
+                const cfg = STATUS_CONFIG[st];
+                const count = counts[st] || 0;
+                const isActive = statusFilter === st;
+
+                return (
+                  <button
+                    key={st}
+                    onClick={() => setStatusFilter(st)}
+                    className={`px-3 py-2 rounded-xl text-xs font-black uppercase transition-all whitespace-nowrap flex items-center gap-1.5 border ${
+                      isActive 
+                        ? `${cfg.bgColor} ${cfg.textColor} ${cfg.borderColor} shadow-md scale-105` 
+                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${cfg.bgColor}`} />
+                    {cfg.label} ({count})
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -206,7 +243,7 @@ const EquipmentSection: React.FC<Props> = ({ categories, data, onStatusChange })
         // Filter items
         const filteredItems = category.items.filter((item) => {
           const st = data[item] || EquipmentStatus.AVAILABLE;
-          const loc = EQUIPMENT_LOCATIONS[item] || '';
+          const loc = activeLocations[item] || '';
           const matchesSearch = 
             item.toLowerCase().includes(searchTerm.toLowerCase()) || 
             loc.toLowerCase().includes(searchTerm.toLowerCase());
@@ -238,6 +275,7 @@ const EquipmentSection: React.FC<Props> = ({ categories, data, onStatusChange })
                 const config = STATUS_CONFIG[status];
                 const isRunning = status === EquipmentStatus.IN_LINE || status === EquipmentStatus.IN_SERVICE;
                 const showSnow = isCoolingCategory && isRunning && (item.includes('URA') || item.includes('Frigorífica') || item.includes('Container'));
+                const isCustom = customSet.has(item.toLowerCase());
 
                 return (
                   <button 
@@ -252,9 +290,26 @@ const EquipmentSection: React.FC<Props> = ({ categories, data, onStatusChange })
                     {showSnow && <SnowLayer />}
 
                     <div className="flex justify-between items-start relative z-10 w-full mb-2">
-                      <span className="font-black uppercase opacity-90 text-[8px] sm:text-xs lg:text-xl bg-black/40 px-2 py-1 sm:px-4 sm:py-2 rounded-lg lg:rounded-xl border border-white/10 shadow-lg">
-                        #{EQUIPMENT_LOCATIONS[item] || '??'}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-black uppercase opacity-90 text-[8px] sm:text-xs lg:text-xl bg-black/40 px-2 py-1 sm:px-4 sm:py-2 rounded-lg lg:rounded-xl border border-white/10 shadow-lg">
+                          #{activeLocations[item] || '??'}
+                        </span>
+                        {isCustom && onDeleteEquipment && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm(`Remover o equipamento personalizado "${item}"?`)) {
+                                onDeleteEquipment(item);
+                              }
+                            }}
+                            className="p-1 sm:p-1.5 bg-black/60 hover:bg-red-600 text-slate-300 hover:text-white rounded-lg transition-colors border border-white/10 shadow-lg"
+                            title="Remover equipamento personalizado"
+                          >
+                            <Trash2 size={12} className="sm:w-3.5 sm:h-3.5" />
+                          </button>
+                        )}
+                      </div>
                       <div className="bg-white/10 p-1 lg:p-2 rounded-lg lg:rounded-2xl shrink-0">
                         {getIcon(item, status, true)}
                       </div>
@@ -282,6 +337,17 @@ const EquipmentSection: React.FC<Props> = ({ categories, data, onStatusChange })
           </div>
         );
       })}
+
+      {isAddModalOpen && onAddEquipment && onDeleteEquipment && (
+        <AddEquipmentModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          categories={categories}
+          customEquipments={customEquipments || []}
+          onAddEquipment={onAddEquipment}
+          onDeleteEquipment={onDeleteEquipment}
+        />
+      )}
     </div>
   );
 };
