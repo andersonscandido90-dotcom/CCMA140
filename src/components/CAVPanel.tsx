@@ -1,5 +1,6 @@
 import React from 'react';
 import { ShieldAlert, Info, Waves, Lock } from 'lucide-react';
+import { EDUCTOR_SECTIONS } from '../constants';
 
 const SewageValveIcon = ({ size = 24, className = "" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -7,35 +8,7 @@ const SewageValveIcon = ({ size = 24, className = "" }) => (
   </svg>
 );
 
-interface Eductor {
-  capacity: number;
-  deck: number;
-  side?: 'BB' | 'BE';
-}
-
-interface SectionData {
-  section: string;
-  eductors: Eductor[];
-  sewageVia?: string; // Novo campo solicitado
-}
-
-const SECTIONS: SectionData[] = [
-  { section: 'C', eductors: [], sewageVia: 'Seção D' },
-  { section: 'D', eductors: [{ capacity: 15, deck: 9 }] },
-  { section: 'F', eductors: [{ capacity: 15, deck: 9 }] },
-  { section: 'G', eductors: [{ capacity: 75, deck: 9, side: 'BB' }, { capacity: 75, deck: 9, side: 'BE' }] },
-  { section: 'H', eductors: [{ capacity: 75, deck: 9, side: 'BB' }, { capacity: 75, deck: 9, side: 'BE' }] },
-  { section: 'J', eductors: [{ capacity: 75, deck: 9, side: 'BB' }, { capacity: 75, deck: 9, side: 'BE' }] },
-  { section: 'K', eductors: [{ capacity: 75, deck: 9, side: 'BB' }, { capacity: 75, deck: 9, side: 'BE' }] },
-  { section: 'L', eductors: [{ capacity: 75, deck: 9, side: 'BB' }, { capacity: 75, deck: 9, side: 'BE' }] },
-  { section: 'M', eductors: [{ capacity: 75, deck: 9, side: 'BB' }, { capacity: 75, deck: 9, side: 'BE' }] },
-  { section: 'N', eductors: [{ capacity: 15, deck: 9 }] },
-  { section: 'P', eductors: [], sewageVia: 'Seção N' },
-  { section: 'Q', eductors: [{ capacity: 15, deck: 9 }] },
-  { section: 'R', eductors: [], sewageVia: 'Seção Q' },
-  { section: 'S', eductors: [], sewageVia: 'Não possui equipamento de esgoto fixo' },
-  { section: 'T', eductors: [{ capacity: 15, deck: 7 }] },
-];
+const SECTIONS = EDUCTOR_SECTIONS;
 
 interface Props {
   eductorStatuses: Record<string, boolean>;

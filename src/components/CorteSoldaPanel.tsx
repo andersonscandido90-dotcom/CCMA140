@@ -97,15 +97,17 @@ const CorteSoldaPanel: React.FC<Props> = ({ list = [], onChange, readOnly = fals
           </div>
         </div>
 
-        {!readOnly && (
-          <button
-            onClick={handleAddEntry}
-            className="w-full sm:w-auto px-5 py-3.5 bg-amber-600 hover:bg-amber-500 active:scale-95 text-white font-black uppercase text-xs rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2"
-          >
-            <Plus size={18} />
-            <span>Adicionar Corte / Solda</span>
-          </button>
-        )}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+          {!readOnly && (
+            <button
+              onClick={handleAddEntry}
+              className="w-full sm:w-auto px-5 py-3.5 bg-amber-600 hover:bg-amber-500 active:scale-95 text-white font-black uppercase text-xs rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2"
+            >
+              <Plus size={18} />
+              <span>Adicionar Corte / Solda</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Lista de Trabalhos a Quente */}

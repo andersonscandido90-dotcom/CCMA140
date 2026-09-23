@@ -23,7 +23,7 @@ import {
   Waves,
   PhoneCall
 } from 'lucide-react';
-import { EquipmentStatus, DailyReport, FuelData, EquipmentData, StabilityData, PersonnelData, LogEntry, CorteSoldaEntry, ExtensionEntry, CustomEquipment, EquipmentCategory } from './types';
+import { EquipmentStatus, DailyReport, FuelData, EquipmentData, StabilityData, PersonnelData, LogEntry, CorteSoldaEntry, ExtensionEntry, CustomEquipment, EquipmentCategory, CavExerciseEntry } from './types';
 import { CATEGORIES, SHIP_CONFIG, EQUIPMENT_LOCATIONS } from './constants';
 import EquipmentSection from './components/EquipmentSection';
 import FuelPanel from './components/FuelPanel';
@@ -40,6 +40,12 @@ import PrintSupervisionReport from './components/PrintSupervisionReport';
 import BackupManagerModal from './components/BackupManagerModal';
 import PhoneDirectoryPanel from './components/PhoneDirectoryPanel';
 import { AguadaData } from './types';
+import { 
+  getPriorReport, 
+  getPreviousRestrictionInfo, 
+  resolveAutoRestrictions, 
+  saveMasterRestriction 
+} from './utils/restrictionHistory';
 
 const DEFAULT_FUEL: FuelData = { 
   water: 0, lubOil: 0, fuelOil: 0, jp5: 0,
@@ -272,6 +278,7 @@ const initializeAppData = () => {
       eductorStatuses: {},
       isisOverrides: {},
       corteSoldaList: [],
+      cavExercises: [],
       logs: [],
       serviceNotes: localStorage.getItem('service_notes') || '',
       customEquipments: [],
@@ -284,6 +291,9 @@ const initializeAppData = () => {
     }
     if (!report.corteSoldaList) {
       report.corteSoldaList = [];
+    }
+    if (!report.cavExercises) {
+      report.cavExercises = [];
     }
     if (!report.aguada) {
       report.aguada = DEFAULT_AGUADA;
@@ -304,6 +314,19 @@ const initializeAppData = () => {
         report.removedEquipments = [];
       }
     }
+
+    // Auto-carrega restrições e indisponibilidades se o status for RESTRICTED ou UNAVAILABLE e o motivo estiver vazio
+    if (report.equipment) {
+      const auto = resolveAutoRestrictions(report.equipment, report.restrictionReasons || {}, savedDate);
+      if (auto.autoFilledCount > 0) {
+        report.restrictionReasons = auto.resolvedReasons;
+        try {
+          localStorage.setItem(`report_${savedDate}`, JSON.stringify(report));
+        } catch (e) {
+          console.error('Erro ao atualizar relatório inicial com restrições:', e);
+        }
+      }
+    }
   }
 
   return { savedDate, report };
@@ -322,6 +345,7 @@ const App: React.FC = () => {
   const [eductorStatuses, setEductorStatuses] = useState<Record<string, boolean>>(initialReport.eductorStatuses);
   const [isisOverrides, setIsisOverrides] = useState<Record<string, string>>(initialReport.isisOverrides);
   const [corteSoldaList, setCorteSoldaList] = useState<CorteSoldaEntry[]>(initialReport.corteSoldaList || []);
+  const [cavExercises, setCavExercises] = useState<CavExerciseEntry[]>(initialReport.cavExercises || []);
   const [logs, setLogs] = useState<LogEntry[]>(initialReport.logs);
   const [serviceNotes, setServiceNotes] = useState<string>(initialReport.serviceNotes || '');
   const [phoneDirectory, setPhoneDirectory] = useState<ExtensionEntry[]>(initialReport.phoneDirectory || []);
@@ -474,7 +498,7 @@ const App: React.FC = () => {
     { id: 'aguada', icon: <Droplets size={18} />, label: 'Aguada' },
     { id: 'stability', icon: <Compass size={18} />, label: 'Estabilidade' },
     { id: 'eductors', icon: <Waves size={18} />, label: 'Edutores' },
-    { id: 'cav', icon: <Flame size={18} />, label: 'CAV' },
+    { id: 'cav', icon: <Flame size={18} />, label: 'CAV / Solda' },
     { id: 'isis', icon: <Monitor size={18} />, label: 'ISIS' },
     { id: 'personnel', icon: <Users size={18} />, label: 'Tabela de Serviço' }
   ], []);
@@ -492,22 +516,60 @@ const App: React.FC = () => {
     }
   };
 
+  const saveCurrentReport = () => {
+    const report: DailyReport = {
+      date: selectedDate,
+      equipment: equipmentData,
+      fuel: fuelData,
+      stability: stabilityData,
+      personnel: personnelData,
+      aguada: aguadaData,
+      restrictionReasons,
+      eductorStatuses,
+      isisOverrides,
+      corteSoldaList,
+      cavExercises,
+      phoneDirectory,
+      logs,
+      serviceNotes,
+      customEquipments,
+      removedEquipments
+    };
+    localStorage.setItem(`report_${selectedDate}`, JSON.stringify(report));
+    console.log('💾 Relatório salvo:', selectedDate);
+  };
+
   const updateSelectedDate = (newDate: string) => {
+    // 1. Salva o relatório da data atual antes de alternar de data
+    saveCurrentReport();
+
     setSelectedDate(newDate);
     localStorage.setItem('selected_date', newDate);
     const saved = localStorage.getItem(`report_${newDate}`);
     if (saved) {
       try {
         const data = JSON.parse(saved) as DailyReport;
-        setEquipmentData(data.equipment);
-        setFuelData(data.fuel);
-        setStabilityData(data.stability);
+
+        // Auto-carrega restrições se o equipamento continua RESTRICTED ou UNAVAILABLE e está sem justificativa
+        const existingReasons = data.restrictionReasons || {};
+        const auto = resolveAutoRestrictions(data.equipment || {}, existingReasons, newDate);
+        const resolvedReasons = auto.resolvedReasons;
+        if (auto.autoFilledCount > 0) {
+          data.restrictionReasons = resolvedReasons;
+          localStorage.setItem(`report_${newDate}`, JSON.stringify(data));
+          console.log(`🔄 Carregadas ${auto.autoFilledCount} restrições anteriores para ${newDate}`);
+        }
+
+        setEquipmentData(data.equipment || {});
+        setFuelData(data.fuel || DEFAULT_FUEL);
+        setStabilityData(data.stability || DEFAULT_STABILITY);
         setPersonnelData(data.personnel || DEFAULT_PERSONNEL);
         setAguadaData(data.aguada || DEFAULT_AGUADA);
-        setRestrictionReasons(data.restrictionReasons || {});
+        setRestrictionReasons(resolvedReasons);
         setEductorStatuses(data.eductorStatuses || {});
         setIsisOverrides(data.isisOverrides || {});
         setCorteSoldaList(data.corteSoldaList || []);
+        setCavExercises(data.cavExercises || []);
         if (data.phoneDirectory) setPhoneDirectory(data.phoneDirectory);
         if (data.customEquipments && Array.isArray(data.customEquipments)) {
           setCustomEquipments(prev => {
@@ -529,41 +591,59 @@ const App: React.FC = () => {
         console.log('✅ Dados carregados para', newDate);
       } catch (e) { console.error(e); }
     } else {
-      setEquipmentData({});
-      setFuelData(DEFAULT_FUEL);
-      setStabilityData(DEFAULT_STABILITY);
-      setPersonnelData(DEFAULT_PERSONNEL);
-      setAguadaData(DEFAULT_AGUADA);
-      setRestrictionReasons({});
-      setEductorStatuses({});
-      setIsisOverrides({});
-      setCorteSoldaList([]);
-      setLogs([]);
-      setServiceNotes('');
-      console.log('📭 Nenhum dado para', newDate);
-    }
-  };
+      // Nova data sem relatório prévio:
+      // Busca o relatório anterior mais recente para dar continuidade ao serviço naval
+      const priorReport = getPriorReport(newDate);
 
-  const saveCurrentReport = () => {
-    const report: DailyReport = {
-      date: selectedDate,
-      equipment: equipmentData,
-      fuel: fuelData,
-      stability: stabilityData,
-      personnel: personnelData,
-      aguada: aguadaData,
-      restrictionReasons,
-      eductorStatuses,
-      isisOverrides,
-      corteSoldaList,
-      phoneDirectory,
-      logs,
-      serviceNotes,
-      customEquipments,
-      removedEquipments
-    };
-    localStorage.setItem(`report_${selectedDate}`, JSON.stringify(report));
-    console.log('💾 Relatório salvo:', selectedDate);
+      const seedEquipment = priorReport?.equipment ? { ...priorReport.equipment } : {};
+      const seedFuel = priorReport?.fuel ? { ...priorReport.fuel } : DEFAULT_FUEL;
+      const seedStability = priorReport?.stability ? { ...priorReport.stability } : DEFAULT_STABILITY;
+      const seedPersonnel = priorReport?.personnel ? { ...priorReport.personnel } : DEFAULT_PERSONNEL;
+      const seedAguada = priorReport?.aguada ? { ...priorReport.aguada } : DEFAULT_AGUADA;
+      const seedEductors = priorReport?.eductorStatuses ? { ...priorReport.eductorStatuses } : {};
+      const seedIsis = priorReport?.isisOverrides ? { ...priorReport.isisOverrides } : {};
+      const seedDirectory = priorReport?.phoneDirectory || phoneDirectory;
+
+      // Auto-carrega as informações de restrição e indisponibilidade se o status continuou o mesmo
+      const baseReasons = priorReport?.restrictionReasons ? { ...priorReport.restrictionReasons } : {};
+      const auto = resolveAutoRestrictions(seedEquipment, baseReasons, newDate);
+      const seedReasons = auto.resolvedReasons;
+
+      setEquipmentData(seedEquipment);
+      setFuelData(seedFuel);
+      setStabilityData(seedStability);
+      setPersonnelData(seedPersonnel);
+      setAguadaData(seedAguada);
+      setRestrictionReasons(seedReasons);
+      setEductorStatuses(seedEductors);
+      setIsisOverrides(seedIsis);
+      setCorteSoldaList([]);
+      setCavExercises([]);
+      setLogs([]);
+      setServiceNotes(priorReport?.serviceNotes || '');
+
+      // Persiste o novo relatório com continuidade
+      const newReport: DailyReport = {
+        date: newDate,
+        equipment: seedEquipment,
+        fuel: seedFuel,
+        stability: seedStability,
+        personnel: seedPersonnel,
+        aguada: seedAguada,
+        restrictionReasons: seedReasons,
+        eductorStatuses: seedEductors,
+        isisOverrides: seedIsis,
+        corteSoldaList: [],
+        cavExercises: [],
+        phoneDirectory: seedDirectory,
+        logs: [],
+        serviceNotes: priorReport?.serviceNotes || '',
+        customEquipments,
+        removedEquipments
+      };
+      localStorage.setItem(`report_${newDate}`, JSON.stringify(newReport));
+      console.log('🆕 Novo relatório inicializado com continuidade de status e restrições para', newDate);
+    }
   };
 
   const saveData = (updates: Partial<DailyReport>) => {
@@ -611,6 +691,7 @@ const App: React.FC = () => {
     if (updates.restrictionReasons) setRestrictionReasons(updates.restrictionReasons);
     if (updates.eductorStatuses) setEductorStatuses(updates.eductorStatuses);
     if (updates.corteSoldaList) setCorteSoldaList(updates.corteSoldaList);
+    if (updates.cavExercises) setCavExercises(updates.cavExercises);
     if (updates.customEquipments) {
       setCustomEquipments(updates.customEquipments);
       localStorage.setItem('custom_equipments', JSON.stringify(updates.customEquipments));
@@ -644,6 +725,7 @@ const App: React.FC = () => {
       eductorStatuses: updates.eductorStatuses !== undefined ? updates.eductorStatuses : eductorStatuses,
       isisOverrides: updates.isisOverrides !== undefined ? updates.isisOverrides : isisOverrides,
       corteSoldaList: updates.corteSoldaList !== undefined ? updates.corteSoldaList : corteSoldaList,
+      cavExercises: updates.cavExercises !== undefined ? updates.cavExercises : cavExercises,
       phoneDirectory: updates.phoneDirectory !== undefined ? updates.phoneDirectory : phoneDirectory,
       logs: updates.logs !== undefined ? updates.logs : logs,
       serviceNotes: updates.serviceNotes !== undefined ? updates.serviceNotes : serviceNotes,
@@ -680,7 +762,24 @@ const App: React.FC = () => {
       newStatus: nextStatus,
       user: 'CENTRO DE COMANDO'
     };
-    saveData({ equipment: { ...equipmentData, [name]: nextStatus }, logs: [...logs, newLog] });
+
+    let nextReasons = { ...restrictionReasons };
+    // Se o equipamento foi colocado em RESTRICTED ou UNAVAILABLE e não possui motivo escrito hoje,
+    // carrega automaticamente o motivo do histórico anterior mais recente
+    if (nextStatus === EquipmentStatus.RESTRICTED || nextStatus === EquipmentStatus.UNAVAILABLE) {
+      if (!nextReasons[name] || nextReasons[name].trim() === '') {
+        const priorInfo = getPreviousRestrictionInfo(name, selectedDate, nextStatus);
+        if (priorInfo && priorInfo.reason) {
+          nextReasons[name] = priorInfo.reason;
+        }
+      }
+    }
+
+    saveData({ 
+      equipment: { ...equipmentData, [name]: nextStatus }, 
+      restrictionReasons: nextReasons,
+      logs: [...logs, newLog] 
+    });
   };
 
   const handleEductorToggle = (id: string) => {
@@ -690,7 +789,17 @@ const App: React.FC = () => {
 
   const handleReasonChange = (item: string, reason: string) => {
     const newReasons = { ...restrictionReasons, [item]: reason };
+    setRestrictionReasons(newReasons);
     saveData({ restrictionReasons: newReasons });
+    saveMasterRestriction(item, reason, equipmentData[item], selectedDate);
+  };
+
+  const handleSyncRestrictionsFromPreviousDay = () => {
+    const auto = resolveAutoRestrictions(equipmentData, {}, selectedDate);
+    const merged = { ...restrictionReasons, ...auto.resolvedReasons };
+    setRestrictionReasons(merged);
+    saveData({ restrictionReasons: merged });
+    console.log('🔄 Sincronização forçada concluída com dia anterior:', merged);
   };
 
   const handleIsisOverride = (channel: string, translation: string) => {
@@ -730,6 +839,7 @@ const App: React.FC = () => {
       eductorStatuses,
       isisOverrides,
       corteSoldaList,
+      cavExercises,
       phoneDirectory,
       logs,
       serviceNotes,
@@ -747,7 +857,7 @@ const App: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  // 📥 Importar JSON (agora com anotações, corte/solda, lista telefônica e equipamentos personalizados)
+  // 📥 Importar JSON (agora com anotações, corte/solda, exercícios CAV, lista telefônica e equipamentos personalizados)
   const handleImportJSON = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -779,6 +889,7 @@ const App: React.FC = () => {
           setEductorStatuses(dados.eductorStatuses || {});
           setIsisOverrides(dados.isisOverrides || {});
           setCorteSoldaList(dados.corteSoldaList || []);
+          setCavExercises(dados.cavExercises || []);
           if (dados.customEquipments && Array.isArray(dados.customEquipments)) {
             setCustomEquipments(dados.customEquipments);
             localStorage.setItem('custom_equipments', JSON.stringify(dados.customEquipments));
@@ -830,7 +941,7 @@ const App: React.FC = () => {
       { id: 'aguada', label: 'Aguada' },
       { id: 'stability', label: 'Estabilidade' },
       { id: 'eductors', label: 'Edutores' },
-      { id: 'cav', label: 'CAV' },
+      { id: 'cav', label: 'CAV / Solda' },
       { id: 'isis', label: 'ISIS' },
       { id: 'personnel', label: 'Tabela de Serviço' },
     ];
@@ -925,6 +1036,7 @@ const App: React.FC = () => {
           eductorStatuses,
           isisOverrides,
           corteSoldaList,
+          cavExercises,
           logs,
           serviceNotes,
           customEquipments,
@@ -950,6 +1062,7 @@ const App: React.FC = () => {
           eductorStatuses,
           isisOverrides,
           corteSoldaList,
+          cavExercises,
           logs,
           serviceNotes,
           customEquipments,
@@ -1110,13 +1223,20 @@ const App: React.FC = () => {
           )}
           {view === 'stability' && <StabilityPanel fuelData={fuelData} data={stabilityData} onChange={(k, v) => saveData({ stability: {...stabilityData, [k]: v}})} />}
           {view === 'eductors' && <CAVPanel eductorStatuses={eductorStatuses} onStatusToggle={handleEductorToggle} />}
-          {view === 'cav' && <CorteSoldaPanel list={corteSoldaList} onChange={(list) => saveData({ corteSoldaList: list })} />}
+          {view === 'cav' && (
+            <CorteSoldaPanel 
+              list={corteSoldaList} 
+              onChange={(list) => saveData({ corteSoldaList: list })} 
+            />
+          )}
           {view === 'restrictions' && (
             <RestrictionsPanel 
               data={equipmentData} 
               reasons={restrictionReasons} 
               onReasonChange={handleReasonChange} 
               onPrintSupervision={() => setShowSupervisionPrintView(true)}
+              currentDate={selectedDate}
+              onSyncPreviousDay={handleSyncRestrictionsFromPreviousDay}
             />
           )}
           {view === 'isis' && <IsisPanel overrides={isisOverrides} onOverrideChange={handleIsisOverride} />}

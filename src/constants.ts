@@ -105,3 +105,34 @@ export const SHIP_CONFIG = {
   designation: "Navio-Aeródromo Multipropósito",
   badgeUrl: "https://tse3.mm.bing.net/th/id/OIP.LNrxq3XEZYXeVQv73TZEtQAAAA?rs=1&pid=ImgDetMain&o=7&rm=3"
 };
+
+export interface EductorInfo {
+  capacity: number;
+  deck: number;
+  side?: 'BB' | 'BE';
+}
+
+export interface SectionEductorData {
+  section: string;
+  name: string;
+  eductors: EductorInfo[];
+  sewageVia?: string;
+}
+
+export const EDUCTOR_SECTIONS: SectionEductorData[] = [
+  { section: 'C', name: 'Seção C (Proa / Auxiliares)', eductors: [], sewageVia: 'Seção D' },
+  { section: 'D', name: 'Seção D (Vante / Convés 9)', eductors: [{ capacity: 15, deck: 9 }] },
+  { section: 'F', name: 'Seção F (Vante / Convés 9)', eductors: [{ capacity: 15, deck: 9 }] },
+  { section: 'G', name: 'Seção G (Centro-Vante)', eductors: [{ capacity: 75, deck: 9, side: 'BB' }, { capacity: 75, deck: 9, side: 'BE' }] },
+  { section: 'H', name: 'Seção H (Praça de Máquinas BE)', eductors: [{ capacity: 75, deck: 9, side: 'BB' }, { capacity: 75, deck: 9, side: 'BE' }] },
+  { section: 'J', name: 'Seção J (Centro / Auxiliares)', eductors: [{ capacity: 75, deck: 9, side: 'BB' }, { capacity: 75, deck: 9, side: 'BE' }] },
+  { section: 'K', name: 'Seção K (Centro / Tratamento)', eductors: [{ capacity: 75, deck: 9, side: 'BB' }, { capacity: 75, deck: 9, side: 'BE' }] },
+  { section: 'L', name: 'Seção L (Praça de Máquinas BB)', eductors: [{ capacity: 75, deck: 9, side: 'BB' }, { capacity: 75, deck: 9, side: 'BE' }] },
+  { section: 'M', name: 'Seção M (Centro-Ré)', eductors: [{ capacity: 75, deck: 9, side: 'BB' }, { capacity: 75, deck: 9, side: 'BE' }] },
+  { section: 'N', name: 'Seção N (Ré / Convés 9)', eductors: [{ capacity: 15, deck: 9 }] },
+  { section: 'P', name: 'Seção P (Ré)', eductors: [], sewageVia: 'Seção N' },
+  { section: 'Q', name: 'Seção Q (Ré / Convés 9)', eductors: [{ capacity: 15, deck: 9 }] },
+  { section: 'R', name: 'Seção R (Ré / Frigorífica)', eductors: [], sewageVia: 'Seção Q' },
+  { section: 'S', name: 'Seção S (Extremo Ré)', eductors: [], sewageVia: 'Não possui equipamento de esgoto fixo' },
+  { section: 'T', name: 'Seção T (Máquina do Leme)', eductors: [{ capacity: 15, deck: 7 }] },
+];

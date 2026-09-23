@@ -139,6 +139,64 @@ export interface DailyReport {
   theme?: string;
   customEquipments?: CustomEquipment[];
   removedEquipments?: string[];
+  cavExercises?: CavExerciseEntry[];
+}
+
+export interface CavExerciseEntry {
+  id: string;
+  name: string;
+  tipoExercicio: 'alagamento' | 'incendio' | 'nivel_cm';
+  date: string;
+  time: string;
+  compartimento: string;
+  secao: string;
+  conves?: string;
+  
+  // Parâmetros de medição em centímetros (Sondagens)
+  nivelAguaCm?: number;
+  areaCompartimentoM2?: number;
+  taxaSubidaCmMin?: number;
+  capacidadeEsgotoFixoTh?: number;
+  saldoEsgotoTh?: number;
+  tempoEsgotoMin?: number;
+  
+  // Parâmetros do furo / rombo
+  tipoGeometria?: 'circular' | 'retangular' | 'area';
+  diametroCm?: number;
+  comprimentoCm?: number;
+  larguraCm?: number;
+  areaCm2?: number;
+  profundidadeH?: number; // Profundidade do centro do orifício abaixo da linha d'água (m)
+  coeficienteCd?: number; // Coeficiente de descarga
+  densidadeAgua?: number; // t/m³ (1.025 água salgada)
+  
+  // Compartimento
+  comprimentoComp?: number;
+  bocaComp?: number;
+  alturaComp?: number;
+  permeabilidade?: number;
+  
+  // Recursos de esgoto mobilizados
+  edutoresAtivos?: string[];
+  bombasPortateisAtivas?: { tipo: string; capacidade: number; qtd: number }[];
+  
+  // Água de Incêndio (se aplicável)
+  linhas15Pol?: number;
+  linhas25Pol?: number;
+  tempoCombateMin?: number;
+  
+  // Resultados calculados
+  vazaoM3h: number;
+  vazaoTh: number;
+  velocidadeMs: number;
+  pressaoKpa: number;
+  forcaKgf: number;
+  
+  // Registro do exercício
+  turmaReparo?: string;
+  tempoContencaoMin?: number;
+  tecnicaUtilizada?: string;
+  observacoes?: string;
 }
 
 export interface EquipmentCategory {
