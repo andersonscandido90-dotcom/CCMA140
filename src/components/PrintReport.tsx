@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { DailyReport, EquipmentStatus, EquipmentCategory } from '../types';
 import { CATEGORIES, SHIP_CONFIG, STATUS_CONFIG } from '../constants';
 import { formatPrecisionNumber } from './FuelPanel';
@@ -109,6 +109,36 @@ export default function PrintReport({ report, categories = CATEGORIES, onClose }
   const tanqueServico = (aguada?.tanqueEmConsumo && aguada.tanqueEmConsumo !== 'NENHUM')
     ? aguada.tanqueEmConsumo
     : (aguada?.tanqueSvc?.nivel || 'NENHUM');
+
+  // Como o PDF é impresso na manhã da passagem de serviço,
+  // o Supervisor do CCM deve ser o militar do serviço do dia anterior
+  const supervisorName = useMemo(() => {
+    if (report.date) {
+      try {
+        const allDates = Object.keys(localStorage)
+          .filter(k => k.startsWith('report_'))
+          .map(k => k.replace('report_', ''))
+          .filter(d => d < report.date)
+          .sort()
+          .reverse();
+
+        for (const prevDate of allDates) {
+          const raw = localStorage.getItem(`report_${prevDate}`);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            const prevSup = (parsed.personnel?.supervisorMO || '').trim();
+            if (prevSup) {
+              return prevSup;
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Erro ao buscar supervisor do dia anterior para o PDF:', e);
+      }
+    }
+    // Fallback caso não haja registro do dia anterior
+    return (report.personnel?.supervisorMO || '').trim();
+  }, [report.date, report.personnel]);
 
   const triggerPrint = () => {
     try {
@@ -362,6 +392,11 @@ export default function PrintReport({ report, categories = CATEGORIES, onClose }
           <div>
             <div className="border-b-2 border-black mb-2 w-4/5 mx-auto"></div>
             <span>SUPERVISOR DO CCM</span>
+            {supervisorName ? (
+              <div className="text-[9.5px] font-bold text-gray-800 normal-case tracking-normal mt-1">
+                {supervisorName.toUpperCase()}
+              </div>
+            ) : null}
           </div>
           <div>
             <div className="border-b-2 border-black mb-2 w-4/5 mx-auto"></div>

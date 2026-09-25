@@ -211,6 +211,38 @@ export default function AguadaPanel({
     }
   }, [prevDayInfo, currentData.sondagemAnterior]);
 
+  // Buscar pessoal do serviço do dia anterior (para os relatórios/PDFs impressos na manhã da passagem de serviço)
+  const prevDayPersonnel = useMemo(() => {
+    try {
+      const allKeys = Object.keys(localStorage)
+        .filter(k => k.startsWith('report_'))
+        .map(k => k.replace('report_', ''))
+        .filter(d => rawSelectedDate ? d < rawSelectedDate : true)
+        .sort()
+        .reverse();
+
+      for (const prevDate of allKeys) {
+        if (rawSelectedDate && prevDate >= rawSelectedDate) continue;
+        const prevDataStr = localStorage.getItem(`report_${prevDate}`);
+        if (prevDataStr) {
+          const parsed = JSON.parse(prevDataStr);
+          const supMo = (parsed.personnel?.supervisorMO || '').trim();
+          const fielNome = (parsed.aguada?.fielAguadaNome || parsed.personnel?.patrulha?.[2] || '').trim();
+          if (supMo || fielNome) {
+            return {
+              date: prevDate,
+              supervisorMO: supMo,
+              fielAguadaNome: fielNome
+            };
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Erro ao buscar pessoal do dia anterior:', e);
+    }
+    return null;
+  }, [rawSelectedDate]);
+
   // Cálculos de Totais
   const valA = typeof currentData.sondagemAnterior === 'number' ? currentData.sondagemAnterior : 0;
 
@@ -1139,10 +1171,35 @@ export default function AguadaPanel({
               <div>
                 <div className="border-b-2 border-black mb-2 w-4/5 mx-auto"></div>
                 <span className="font-black">FIEL DA AGUADA</span>
+                {(() => {
+                  const fielNome = (
+                    prevDayPersonnel?.fielAguadaNome || 
+                    currentData.fielAguadaNome || 
+                    patrulha1620 || 
+                    ''
+                  ).trim();
+                  return fielNome ? (
+                    <div className="text-[10px] font-bold text-gray-800 normal-case tracking-normal mt-1">
+                      {fielNome.toUpperCase()}
+                    </div>
+                  ) : null;
+                })()}
               </div>
               <div>
                 <div className="border-b-2 border-black mb-2 w-4/5 mx-auto"></div>
                 <span className="font-black">CHEFE DE QUARTO</span>
+                {(() => {
+                  const supMo = (
+                    prevDayPersonnel?.supervisorMO || 
+                    personnelData?.supervisorMO || 
+                    ''
+                  ).trim();
+                  return supMo ? (
+                    <div className="text-[10px] font-bold text-gray-800 normal-case tracking-normal mt-1">
+                      {supMo.toUpperCase()}
+                    </div>
+                  ) : null;
+                })()}
               </div>
               <div>
                 <div className="border-b-2 border-black mb-2 w-4/5 mx-auto"></div>
