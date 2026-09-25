@@ -315,21 +315,31 @@ export default function PrintReport({ report, categories = CATEGORIES, onClose }
                     {catItems.map((item) => {
                       const st = report.equipment[item] || EquipmentStatus.AVAILABLE;
                       const cfg = STATUS_CONFIG[st];
-                      const isProblem = st === EquipmentStatus.UNAVAILABLE || st === EquipmentStatus.RESTRICTED;
+                      const isUnavailable = st === EquipmentStatus.UNAVAILABLE;
+                      const isRestricted = st === EquipmentStatus.RESTRICTED;
+                      const isLine = st === EquipmentStatus.IN_LINE;
                       return (
                         <div 
                           key={item} 
                           className={`p-1 rounded border leading-tight flex justify-between items-center gap-1 ${
-                            isProblem ? 'bg-red-50 border-red-200 font-bold' : 'bg-gray-50 border-gray-200'
+                            isUnavailable 
+                              ? 'bg-red-50 border-red-200 font-bold' 
+                              : isRestricted
+                              ? 'bg-amber-50 border-amber-200 font-bold'
+                              : isLine
+                              ? 'bg-emerald-50 border-emerald-300 font-bold'
+                              : 'bg-gray-50 border-gray-200'
                           }`}
                         >
                           <span className="font-bold text-[9px] sm:text-[9.5px] leading-snug break-words min-w-0 flex-1">{item}</span>
                           <span className={`text-[7.5px] sm:text-[8px] font-black px-1 py-0.5 rounded uppercase shrink-0 ${
-                            st === EquipmentStatus.IN_SERVICE || st === EquipmentStatus.IN_LINE
-                              ? 'bg-blue-100 text-blue-800'
-                              : st === EquipmentStatus.UNAVAILABLE
+                            isLine
+                              ? 'bg-green-600 text-white'
+                              : st === EquipmentStatus.IN_SERVICE
+                              ? 'bg-blue-600 text-white'
+                              : isUnavailable
                               ? 'bg-red-600 text-white'
-                              : st === EquipmentStatus.RESTRICTED
+                              : isRestricted
                               ? 'bg-amber-100 text-amber-800'
                               : 'bg-gray-200 text-gray-700'
                           }`}>

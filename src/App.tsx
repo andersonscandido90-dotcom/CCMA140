@@ -21,7 +21,8 @@ import {
   Database,
   Flame,
   Waves,
-  PhoneCall
+  PhoneCall,
+  RotateCcw
 } from 'lucide-react';
 import { EquipmentStatus, DailyReport, FuelData, EquipmentData, StabilityData, PersonnelData, LogEntry, CorteSoldaEntry, ExtensionEntry, CustomEquipment, EquipmentCategory, CavExerciseEntry } from './types';
 import { CATEGORIES, SHIP_CONFIG, EQUIPMENT_LOCATIONS } from './constants';
@@ -181,6 +182,21 @@ const PersonnelView: React.FC<{
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
+      {/* Barra Superior de Informação */}
+      <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 p-4 sm:p-5 rounded-[1.5rem] sm:rounded-[2rem]">
+        <div className="p-2.5 bg-blue-600/20 border border-blue-500/30 rounded-xl text-blue-400 shrink-0">
+          <Users size={20} />
+        </div>
+        <div>
+          <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-wider">
+            Tabela de Serviço / Escala
+          </h2>
+          <p className="text-[11px] sm:text-xs text-slate-400">
+            Escala zerada a cada nova data. O campo <span className="text-indigo-400 font-bold">Anotações do Serviço</span> é salvo e recarregado automaticamente.
+          </p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-12">
         <div className="space-y-6 sm:space-y-8">
           <h3 className="font-black flex items-center gap-4 text-white uppercase text-lg sm:text-xl lg:text-2xl mb-4 sm:mb-6">
@@ -204,13 +220,20 @@ const PersonnelView: React.FC<{
       </div>
 
       <div className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-[2rem] sm:rounded-[3rem] mt-8">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="p-3 bg-indigo-600/20 rounded-xl">
-            <ClipboardList className="w-6 h-6 text-indigo-400" />
+        <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-indigo-600/20 rounded-xl">
+              <ClipboardList className="w-6 h-6 text-indigo-400" />
+            </div>
+            <div>
+              <h3 className="font-black uppercase text-white text-lg sm:text-xl">
+                Anotações do Serviço
+              </h3>
+              <p className="text-xs text-slate-400">
+                Informações salvas e recarregadas automaticamente entre datas
+              </p>
+            </div>
           </div>
-          <h3 className="font-black uppercase text-white text-lg sm:text-xl">
-            Anotações do Serviço
-          </h3>
         </div>
         
         <textarea
@@ -220,7 +243,11 @@ const PersonnelView: React.FC<{
           className="w-full bg-slate-950 border-2 border-slate-800 rounded-2xl p-6 font-mono text-white placeholder-slate-600 focus:border-indigo-500/50 focus:outline-none transition-all resize-y min-h-[200px] text-base"
         />
         
-        <div className="flex justify-end mt-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mt-4">
+          <span className="text-xs text-emerald-400/90 flex items-center gap-1.5 font-medium">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
+            Salvo e recarregado automaticamente entre todas as datas
+          </span>
           <span className="text-sm font-mono text-slate-600">
             {serviceNotes.length} caracteres
           </span>
@@ -536,6 +563,9 @@ const App: React.FC = () => {
       removedEquipments
     };
     localStorage.setItem(`report_${selectedDate}`, JSON.stringify(report));
+    if (serviceNotes && serviceNotes.trim().length > 0) {
+      localStorage.setItem('service_notes', serviceNotes);
+    }
     console.log('💾 Relatório salvo:', selectedDate);
   };
 
@@ -587,27 +617,66 @@ const App: React.FC = () => {
           localStorage.setItem('removed_equipments', JSON.stringify(data.removedEquipments));
         }
         setLogs(data.logs || []);
-        setServiceNotes(data.serviceNotes || localStorage.getItem('service_notes') || '');
+        const loadedNotes = (data.serviceNotes !== undefined && data.serviceNotes !== '')
+          ? data.serviceNotes
+          : (localStorage.getItem('service_notes') || '');
+        setServiceNotes(loadedNotes);
         console.log('✅ Dados carregados para', newDate);
       } catch (e) { console.error(e); }
     } else {
       // Nova data sem relatório prévio:
-      // Busca o relatório anterior mais recente para dar continuidade ao serviço naval
+      // Busca o relatório anterior mais recente para dar continuidade às outras abas operacionais
       const priorReport = getPriorReport(newDate);
 
-      const seedEquipment = priorReport?.equipment ? { ...priorReport.equipment } : {};
+      // Status dos equipamentos ZERADOS com uma nova data (conforme solicitado pelo usuário):
+      // Inicia como objeto vazio {} para que todos os equipamentos voltem ao status inicial padrão (Disponível / Verde)
+      const seedEquipment: EquipmentData = {};
+
+      // A aba Tabela de Serviço também ZERA com a nova data (conforme solicitado pelo usuário):
+      // Nomes dos militares na supervisão e quartos de serviço iniciam em branco (zerados)
+      const seedPersonnel: PersonnelData = {
+        supervisorMO: '',
+        supervisorEL: '',
+        fielCav: '',
+        encarregadoMaquinas: '',
+        auxiliares: ['', '', ''],
+        patrulha: ['', '', '']
+      };
+
+      // Apenas as informações contidas no campo "Anotações do Serviço" devem ser salvas e recarregadas automaticamente:
+      const seedServiceNotes = (serviceNotes && serviceNotes.trim().length > 0)
+        ? serviceNotes
+        : (priorReport?.serviceNotes || localStorage.getItem('service_notes') || '');
+
+      // As outras abas continuam com as mesmas funções (continuidade normal):
       const seedFuel = priorReport?.fuel ? { ...priorReport.fuel } : DEFAULT_FUEL;
       const seedStability = priorReport?.stability ? { ...priorReport.stability } : DEFAULT_STABILITY;
-      const seedPersonnel = priorReport?.personnel ? { ...priorReport.personnel } : DEFAULT_PERSONNEL;
       const seedAguada = priorReport?.aguada ? { ...priorReport.aguada } : DEFAULT_AGUADA;
       const seedEductors = priorReport?.eductorStatuses ? { ...priorReport.eductorStatuses } : {};
       const seedIsis = priorReport?.isisOverrides ? { ...priorReport.isisOverrides } : {};
       const seedDirectory = priorReport?.phoneDirectory || phoneDirectory;
 
-      // Auto-carrega as informações de restrição e indisponibilidade se o status continuou o mesmo
-      const baseReasons = priorReport?.restrictionReasons ? { ...priorReport.restrictionReasons } : {};
-      const auto = resolveAutoRestrictions(seedEquipment, baseReasons, newDate);
-      const seedReasons = auto.resolvedReasons;
+      // E as informações da aba restrições ficam salvas/preservadas do histórico/relatório anterior,
+      // para não precisar reescrevê-las caso o equipamento persista com o mesmo status no dia seguinte:
+      const masterReasonsStr = localStorage.getItem('master_equipment_reasons');
+      const masterReasons = masterReasonsStr ? JSON.parse(masterReasonsStr) : {};
+      const seedReasons: Record<string, string> = {
+        ...(priorReport?.restrictionReasons || {}),
+        ...masterReasons
+      };
+      const masterDetailStr = localStorage.getItem('master_equipment_restrictions_detail');
+      if (masterDetailStr) {
+        try {
+          const detail = JSON.parse(masterDetailStr);
+          Object.entries(detail).forEach(([item, val]: [string, any]) => {
+            if (val?.reason && !seedReasons[item]) {
+              seedReasons[item] = val.reason;
+            }
+          });
+        } catch (e) {
+          console.error('Erro ao mesclar detalhes de restrição:', e);
+        }
+      }
 
       setEquipmentData(seedEquipment);
       setFuelData(seedFuel);
@@ -620,9 +689,12 @@ const App: React.FC = () => {
       setCorteSoldaList([]);
       setCavExercises([]);
       setLogs([]);
-      setServiceNotes(priorReport?.serviceNotes || '');
+      setServiceNotes(seedServiceNotes);
+      if (seedServiceNotes) {
+        localStorage.setItem('service_notes', seedServiceNotes);
+      }
 
-      // Persiste o novo relatório com continuidade
+      // Persiste o novo relatório com equipamentos e tabela de serviço zerados, e restrições e anotações preservadas
       const newReport: DailyReport = {
         date: newDate,
         equipment: seedEquipment,
@@ -637,12 +709,12 @@ const App: React.FC = () => {
         cavExercises: [],
         phoneDirectory: seedDirectory,
         logs: [],
-        serviceNotes: priorReport?.serviceNotes || '',
+        serviceNotes: seedServiceNotes,
         customEquipments,
         removedEquipments
       };
       localStorage.setItem(`report_${newDate}`, JSON.stringify(newReport));
-      console.log('🆕 Novo relatório inicializado com continuidade de status e restrições para', newDate);
+      console.log('🆕 Novo relatório inicializado com equipamentos e tabela de serviço zerados, anotações e restrições salvas para', newDate);
     }
   };
 
@@ -740,7 +812,39 @@ const App: React.FC = () => {
       const masterReasons = masterReasonsStr ? JSON.parse(masterReasonsStr) : {};
       const newMaster = { ...masterReasons, ...updates.restrictionReasons };
       localStorage.setItem('master_equipment_reasons', JSON.stringify(newMaster));
+
+      const masterDetailStr = localStorage.getItem('master_equipment_restrictions_detail');
+      const masterDetail = masterDetailStr ? JSON.parse(masterDetailStr) : {};
+      Object.entries(updates.restrictionReasons).forEach(([item, reason]) => {
+        if (reason && reason.trim() !== '') {
+          masterDetail[item] = {
+            reason: reason.trim(),
+            status: nextEquipment[item] || equipmentData[item],
+            lastDate: selectedDate,
+            updatedAt: new Date().toISOString()
+          };
+        }
+      });
+      localStorage.setItem('master_equipment_restrictions_detail', JSON.stringify(masterDetail));
     }
+  };
+
+  // Handler para zerar os status de todos os equipamentos da data (volta todos ao padrão AVAILABLE / Verde)
+  // Preservando todas as descrições e histórico da aba de restrições
+  const handleResetEquipmentStatuses = () => {
+    const newLog: LogEntry = {
+      id: Math.random().toString(36).substr(2, 9),
+      item: 'TODOS OS EQUIPAMENTOS',
+      timestamp: new Date().toISOString(),
+      oldStatus: EquipmentStatus.UNAVAILABLE,
+      newStatus: EquipmentStatus.AVAILABLE,
+      user: 'STATUS ZERADOS'
+    };
+    saveData({
+      equipment: {},
+      logs: [...logs, newLog]
+    });
+    console.log('🔄 Todos os status dos equipamentos foram zerados para a data:', selectedDate);
   };
 
   const handleStatusChange = (name: string) => {
@@ -795,8 +899,16 @@ const App: React.FC = () => {
   };
 
   const handleSyncRestrictionsFromPreviousDay = () => {
+    const priorReport = getPriorReport(selectedDate);
+    const masterReasonsStr = localStorage.getItem('master_equipment_reasons');
+    const masterReasons = masterReasonsStr ? JSON.parse(masterReasonsStr) : {};
     const auto = resolveAutoRestrictions(equipmentData, {}, selectedDate);
-    const merged = { ...restrictionReasons, ...auto.resolvedReasons };
+    const merged = { 
+      ...(priorReport?.restrictionReasons || {}),
+      ...masterReasons,
+      ...restrictionReasons, 
+      ...auto.resolvedReasons 
+    };
     setRestrictionReasons(merged);
     saveData({ restrictionReasons: merged });
     console.log('🔄 Sincronização forçada concluída com dia anterior:', merged);
@@ -937,6 +1049,7 @@ const App: React.FC = () => {
     const TV_SLIDES = [
       { id: 'phonebook', label: 'Lista Telefônica' },
       { id: 'equipment', label: 'Equipamentos' },
+      { id: 'restrictions', label: 'Restrições' },
       { id: 'fuel', label: 'Cargas' },
       { id: 'aguada', label: 'Aguada' },
       { id: 'stability', label: 'Estabilidade' },
@@ -949,13 +1062,13 @@ const App: React.FC = () => {
     return (
       <div className="fixed inset-0 bg-slate-950 text-white flex flex-col overflow-hidden z-[100]">
         <div className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 custom-scrollbar">
-          {currentTvSlide === 0 && (
+          {TV_SLIDES[currentTvSlide]?.id === 'phonebook' && (
             <PhoneDirectoryPanel 
               entries={phoneDirectory} 
               onUpdateEntries={(newEntries) => saveData({ phoneDirectory: newEntries })} 
             />
           )}
-          {currentTvSlide === 1 && (
+          {TV_SLIDES[currentTvSlide]?.id === 'equipment' && (
             <EquipmentSection 
               categories={allCategories} 
               locations={allLocations}
@@ -966,15 +1079,26 @@ const App: React.FC = () => {
               onAddEquipment={handleAddEquipment}
               onDeleteEquipment={handleDeleteEquipment}
               onRestoreEquipment={handleRestoreEquipment}
+              onResetStatuses={handleResetEquipmentStatuses}
             />
           )}
-          {currentTvSlide === 2 && <FuelPanel fuel={fuelData} fullWidth onChange={(k, v) => saveData({ fuel: {...fuelData, [k]: v}})} />}
-          {currentTvSlide === 3 && <AguadaPanel data={aguadaData} equipmentData={equipmentData} personnelData={personnelData} onChange={(data) => saveData({ aguada: data })} shipName={SHIP_CONFIG.name} selectedDate={formattedSelectedDate} rawSelectedDate={selectedDate} />}
-          {currentTvSlide === 4 && <StabilityPanel fuelData={fuelData} data={stabilityData} onChange={(k, v) => saveData({ stability: {...stabilityData, [k]: v}})} />}
-          {currentTvSlide === 5 && <CAVPanel eductorStatuses={eductorStatuses} onStatusToggle={handleEductorToggle} />}
-          {currentTvSlide === 6 && <CorteSoldaPanel list={corteSoldaList} onChange={(list) => saveData({ corteSoldaList: list })} readOnly />}
-          {currentTvSlide === 7 && <IsisPanel overrides={isisOverrides} onOverrideChange={handleIsisOverride} />}
-          {currentTvSlide === 8 && (
+          {TV_SLIDES[currentTvSlide]?.id === 'restrictions' && (
+            <RestrictionsPanel 
+              data={equipmentData} 
+              reasons={restrictionReasons} 
+              onReasonChange={handleReasonChange} 
+              onPrintSupervision={() => setShowSupervisionPrintView(true)}
+              currentDate={selectedDate}
+              onSyncPreviousDay={handleSyncRestrictionsFromPreviousDay}
+            />
+          )}
+          {TV_SLIDES[currentTvSlide]?.id === 'fuel' && <FuelPanel fuel={fuelData} fullWidth onChange={(k, v) => saveData({ fuel: {...fuelData, [k]: v}})} />}
+          {TV_SLIDES[currentTvSlide]?.id === 'aguada' && <AguadaPanel data={aguadaData} equipmentData={equipmentData} personnelData={personnelData} onChange={(data) => saveData({ aguada: data })} shipName={SHIP_CONFIG.name} selectedDate={formattedSelectedDate} rawSelectedDate={selectedDate} />}
+          {TV_SLIDES[currentTvSlide]?.id === 'stability' && <StabilityPanel fuelData={fuelData} data={stabilityData} onChange={(k, v) => saveData({ stability: {...stabilityData, [k]: v}})} />}
+          {TV_SLIDES[currentTvSlide]?.id === 'eductors' && <CAVPanel eductorStatuses={eductorStatuses} onStatusToggle={handleEductorToggle} />}
+          {TV_SLIDES[currentTvSlide]?.id === 'cav' && <CorteSoldaPanel list={corteSoldaList} onChange={(list) => saveData({ corteSoldaList: list })} readOnly />}
+          {TV_SLIDES[currentTvSlide]?.id === 'isis' && <IsisPanel overrides={isisOverrides} onOverrideChange={handleIsisOverride} />}
+          {TV_SLIDES[currentTvSlide]?.id === 'personnel' && (
             <PersonnelView 
               data={personnelData} 
               onChange={(k, v) => saveData({ personnel: { ...personnelData, [k as keyof PersonnelData]: v } })} 
@@ -1207,6 +1331,7 @@ const App: React.FC = () => {
               onAddEquipment={handleAddEquipment}
               onDeleteEquipment={handleDeleteEquipment}
               onRestoreEquipment={handleRestoreEquipment}
+              onResetStatuses={handleResetEquipmentStatuses}
             />
           )}
           {view === 'fuel' && <FuelPanel fuel={fuelData} fullWidth onChange={(k, v) => saveData({ fuel: {...fuelData, [k]: v}})} />}
@@ -1240,7 +1365,14 @@ const App: React.FC = () => {
             />
           )}
           {view === 'isis' && <IsisPanel overrides={isisOverrides} onOverrideChange={handleIsisOverride} />}
-          {view === 'personnel' && <PersonnelView data={personnelData} onChange={(k, v) => saveData({ personnel: { ...personnelData, [k as keyof PersonnelData]: v } })} serviceNotes={serviceNotes} onServiceNotesChange={handleServiceNotesChange} />}
+          {view === 'personnel' && (
+            <PersonnelView 
+              data={personnelData} 
+              onChange={(k, v) => saveData({ personnel: { ...personnelData, [k as keyof PersonnelData]: v } })} 
+              serviceNotes={serviceNotes} 
+              onServiceNotesChange={handleServiceNotesChange} 
+            />
+          )}
         </div>
       </main>
 

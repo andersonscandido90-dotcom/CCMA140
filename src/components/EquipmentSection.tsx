@@ -15,7 +15,8 @@ import {
   Filter,
   X,
   Plus,
-  Trash2
+  Trash2,
+  RotateCcw
 } from 'lucide-react';
 import { EquipmentCategory, EquipmentData, EquipmentStatus, CustomEquipment } from '../types';
 import { STATUS_CONFIG, EQUIPMENT_LOCATIONS } from '../constants';
@@ -31,6 +32,7 @@ interface Props {
   onAddEquipment?: (equipment: CustomEquipment, initialStatus: EquipmentStatus) => void;
   onDeleteEquipment?: (name: string) => void;
   onRestoreEquipment?: (name: string) => void;
+  onResetStatuses?: () => void;
 }
 
 const SnowLayer: React.FC = () => {
@@ -69,12 +71,28 @@ const EquipmentSection: React.FC<Props> = ({
   removedEquipments,
   onAddEquipment,
   onDeleteEquipment,
-  onRestoreEquipment
+  onRestoreEquipment,
+  onResetStatuses
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | EquipmentStatus>('ALL');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [modalTab, setModalTab] = useState<'add' | 'delete'>('add');
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  const handleResetClick = () => {
+    if (confirmReset) {
+      if (onResetStatuses) {
+        onResetStatuses();
+      }
+      setConfirmReset(false);
+    } else {
+      setConfirmReset(true);
+      setTimeout(() => {
+        setConfirmReset(false);
+      }, 4000);
+    }
+  };
 
   const activeLocations = useMemo(() => {
     return locations || EQUIPMENT_LOCATIONS;
@@ -222,6 +240,22 @@ const EquipmentSection: React.FC<Props> = ({
                 >
                   <Trash2 size={15} className="text-red-400" />
                   <span>Excluir Equipamento</span>
+                </button>
+              )}
+
+              {onResetStatuses && (
+                <button
+                  type="button"
+                  onClick={handleResetClick}
+                  className={`px-3 sm:px-4 py-2.5 sm:py-3 font-black text-xs uppercase tracking-wider rounded-xl shadow-md flex items-center justify-center gap-1.5 sm:gap-2 transition-all active:scale-95 cursor-pointer whitespace-nowrap border ${
+                    confirmReset
+                      ? 'bg-amber-600 hover:bg-amber-500 text-white border-amber-400/50 animate-pulse'
+                      : 'bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border-slate-800'
+                  }`}
+                  title="Zerar status dos equipamentos desta data (todos voltam para Disponível/Verde). As informações de restrições continuam salvas."
+                >
+                  <RotateCcw size={15} className={confirmReset ? 'text-white' : 'text-slate-400'} />
+                  <span>{confirmReset ? 'Confirmar Zerar?' : 'Zerar Status'}</span>
                 </button>
               )}
             </div>
