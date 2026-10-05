@@ -140,6 +140,11 @@ export interface DailyReport {
   customEquipments?: CustomEquipment[];
   removedEquipments?: string[];
   cavExercises?: CavExerciseEntry[];
+  userUpdatedEquipment?: boolean;
+  userUpdatedFuel?: boolean;
+  userUpdatedAguada?: boolean;
+  userUpdatedStability?: boolean;
+  userUpdatedPersonnel?: boolean;
 }
 
 export interface CavExerciseEntry {

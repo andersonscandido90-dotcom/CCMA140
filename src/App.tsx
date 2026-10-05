@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, memo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, memo } from 'react';
 import { 
   Activity, 
   Droplets, 
@@ -22,7 +22,8 @@ import {
   Flame,
   Waves,
   PhoneCall,
-  RotateCcw
+  RotateCcw,
+  Lock
 } from 'lucide-react';
 import { EquipmentStatus, DailyReport, FuelData, EquipmentData, StabilityData, PersonnelData, LogEntry, CorteSoldaEntry, ExtensionEntry, CustomEquipment, EquipmentCategory, CavExerciseEntry } from './types';
 import { CATEGORIES, SHIP_CONFIG, EQUIPMENT_LOCATIONS } from './constants';
@@ -40,6 +41,7 @@ import PrintReport from './components/PrintReport';
 import PrintSupervisionReport from './components/PrintSupervisionReport';
 import BackupManagerModal from './components/BackupManagerModal';
 import PhoneDirectoryPanel from './components/PhoneDirectoryPanel';
+import SecurityLockScreen from './components/SecurityLockScreen';
 import { AguadaData } from './types';
 import { 
   getPriorReport, 
@@ -47,6 +49,11 @@ import {
   resolveAutoRestrictions, 
   saveMasterRestriction 
 } from './utils/restrictionHistory';
+import { 
+  isSessionAuthenticated, 
+  setSessionAuthenticated, 
+  getAutoLockMinutes 
+} from './utils/security';
 
 const DEFAULT_FUEL: FuelData = { 
   water: 0, lubOil: 0, fuelOil: 0, jp5: 0,
@@ -68,60 +75,40 @@ const DEFAULT_PERSONNEL: PersonnelData = {
 
 const ShipLogo = memo(({ className = "w-24 h-auto", customUrl }: { className?: string, customUrl?: string | null }) => {
   const [imageError, setImageError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   
   const logoSrc = customUrl || SHIP_CONFIG.badgeUrl;
   
+  if (!logoSrc || imageError) {
+    return (
+      <div className={`relative flex items-center justify-center shrink-0 ${className}`}>
+        <div className="p-2.5 bg-gradient-to-br from-blue-700 via-blue-900 to-slate-950 rounded-2xl shadow-xl border border-blue-500/30 flex items-center justify-center">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-blue-400">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="rgba(59,130,246,0.15)"/>
+            <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="rgba(59,130,246,0.15)"/>
+            <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="rgba(59,130,246,0.15)"/>
+            <circle cx="12" cy="12" r="2" stroke="currentColor" strokeWidth="1.5" fill="white" fillOpacity="0.3"/>
+          </svg>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`relative flex items-center justify-center shrink-0 ${className}`}>
-      {isLoading && !imageError && (
+      {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
       
-      {!imageError ? (
-        <img 
-          src={logoSrc}
-          alt="Logo do Navio" 
-          className={`w-full h-full object-contain drop-shadow-2xl transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
-          crossOrigin="anonymous"
-          onLoad={() => setIsLoading(false)}
-          onError={(e) => {
-            console.error("Erro ao carregar logo:", logoSrc);
-            setImageError(true);
-            setIsLoading(false);
-            
-            e.currentTarget.style.display = 'none';
-            const parent = e.currentTarget.parentElement;
-            if (parent) {
-              const existingFallback = parent.querySelector('.fallback-icon');
-              if (existingFallback) existingFallback.remove();
-              
-              const icon = document.createElement('div');
-              icon.className = "fallback-icon p-2 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl shadow-2xl";
-              icon.innerHTML = `
-                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="rgba(255,255,255,0.1)"/>
-                  <path d="M2 17L12 22L22 17" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="rgba(255,255,255,0.1)"/>
-                  <path d="M2 12L12 17L22 12" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="rgba(255,255,255,0.1)"/>
-                  <circle cx="12" cy="12" r="2" stroke="white" stroke-width="1.5" fill="white" fill-opacity="0.2"/>
-                </svg>
-              `;
-              parent.appendChild(icon);
-            }
-          }}
-        />
-      ) : (
-        <div className="fallback-icon p-3 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl shadow-2xl">
-          <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="rgba(255,255,255,0.1)"/>
-            <path d="M2 17L12 22L22 17" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="rgba(255,255,255,0.1)"/>
-            <path d="M2 12L12 17L22 12" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="rgba(255,255,255,0.1)"/>
-            <circle cx="12" cy="12" r="2" stroke="white" stroke-width="1.5" fill="white" fill-opacity="0.2"/>
-          </svg>
-        </div>
-      )}
+      <img 
+        src={logoSrc}
+        alt="Emblema" 
+        className={`w-full h-full object-contain drop-shadow-2xl transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
+        onLoad={() => setIsLoading(false)}
+        onError={() => setImageError(true)}
+      />
     </div>
   );
 });
@@ -401,6 +388,42 @@ const App: React.FC = () => {
   const [showBackupModal, setShowBackupModal] = useState(false);
   const [showPrintView, setShowPrintView] = useState(false);
   const [showSupervisionPrintView, setShowSupervisionPrintView] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => isSessionAuthenticated());
+
+  // Bloqueio automático por inatividade para proteção dos dados sigilosos
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    let timer: any = null;
+
+    const resetTimer = () => {
+      if (timer) clearTimeout(timer);
+      const minutes = getAutoLockMinutes();
+      if (minutes > 0) {
+        timer = setTimeout(() => {
+          setSessionAuthenticated(false);
+          setIsAuthenticated(false);
+        }, minutes * 60 * 1000);
+      }
+    };
+
+    resetTimer();
+
+    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    const handleActivity = () => resetTimer();
+    events.forEach(evt => window.addEventListener(evt, handleActivity, { passive: true }));
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      events.forEach(evt => window.removeEventListener(evt, handleActivity));
+    };
+  }, [isAuthenticated]);
+
+  const handleLockApp = () => {
+    setSessionAuthenticated(false);
+    setIsAuthenticated(false);
+    setSidebarOpen(false);
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -1045,6 +1068,20 @@ const App: React.FC = () => {
     return NAV_ITEMS.find(item => item.id === view)?.label || view;
   }, [view, NAV_ITEMS]);
 
+  // BARREIRA DE SEGURANÇA TOTAL:
+  // Se não estiver autenticado, exibe APENAS a tela de senha.
+  // Não renderiza NENHUM dado, gráfico, nome do navio, aba ou característica confidencial.
+  if (!isAuthenticated) {
+    return (
+      <SecurityLockScreen
+        onUnlock={() => {
+          setSessionAuthenticated(true);
+          setIsAuthenticated(true);
+        }}
+      />
+    );
+  }
+
   if (view === 'tv-mode') {
     const TV_SLIDES = [
       { id: 'phonebook', label: 'Lista Telefônica' },
@@ -1133,14 +1170,25 @@ const App: React.FC = () => {
             ))}
           </div>
 
-          <button 
-            onClick={() => setView('menu-inicial')} 
-            className="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl font-black uppercase text-xs transition-all shrink-0 flex items-center gap-1.5 shadow-md ml-1"
-            title="Sair do Modo TV"
-          >
-            <X size={16} />
-            <span className="hidden md:inline">Sair Modo TV</span>
-          </button>
+          <div className="flex items-center gap-1.5 shrink-0 ml-1">
+            <button 
+              onClick={handleLockApp} 
+              className="bg-slate-800 hover:bg-slate-700 text-red-400 hover:text-red-300 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl font-black uppercase text-xs transition-all flex items-center gap-1.5 shadow-md border border-slate-700"
+              title="Bloquear Modo TV por segurança"
+            >
+              <Lock size={15} />
+              <span className="hidden sm:inline">Bloquear</span>
+            </button>
+
+            <button 
+              onClick={() => setView('menu-inicial')} 
+              className="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl font-black uppercase text-xs transition-all flex items-center gap-1.5 shadow-md"
+              title="Sair do Modo TV"
+            >
+              <X size={16} />
+              <span className="hidden md:inline">Sair Modo TV</span>
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1240,6 +1288,16 @@ const App: React.FC = () => {
           <button onClick={() => setView('tv-mode')} className="w-full mt-4 bg-slate-800 hover:bg-slate-700 p-4 rounded-xl font-black uppercase text-[11px] flex items-center gap-3 justify-center transition-all border border-slate-700">
             <Tv size={18} /> Modo TV
           </button>
+
+          <div className="pt-4 mt-4 border-t border-slate-800/80">
+            <button 
+              onClick={handleLockApp} 
+              className="w-full bg-red-950/40 hover:bg-red-900/60 p-3 rounded-xl font-black uppercase text-[11px] flex items-center gap-2.5 justify-center transition-all border border-red-800/40 text-red-300 hover:text-red-100 cursor-pointer"
+              title="Bloquear a tela imediatamente"
+            >
+              <Lock size={15} /> Bloquear Agora
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -1284,6 +1342,15 @@ const App: React.FC = () => {
             >
               <Database size={13} className="sm:w-3.5 sm:h-3.5" />
               <span className="hidden sm:inline">Backups</span>
+            </button>
+
+            <button
+              onClick={handleLockApp}
+              className="px-2 py-1.5 sm:px-3 sm:py-2 bg-red-600/80 hover:bg-red-600 text-white font-black text-[10px] rounded-xl uppercase transition-all flex items-center gap-1 sm:gap-1.5 shadow-md"
+              title="Bloquear a tela de comando imediatamente"
+            >
+              <Lock size={13} className="sm:w-3.5 sm:h-3.5" />
+              <span className="hidden sm:inline">Bloquear</span>
             </button>
 
             <button

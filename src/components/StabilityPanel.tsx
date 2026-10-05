@@ -1,15 +1,16 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { StabilityData, FuelData } from '../types';
-import { Compass, MoveVertical, Anchor, Gauge, Ship, Activity, AlertCircle, CheckCircle2, HelpCircle, X, BookOpen, Calculator, Droplets } from 'lucide-react';
+import { Compass, MoveVertical, Anchor, Gauge, Ship, Activity, AlertCircle, CheckCircle2, HelpCircle, X, BookOpen, Calculator, Droplets, Lock } from 'lucide-react';
 import { formatPrecisionNumber } from './FuelPanel';
 
 interface Props {
   data: StabilityData;
   fuelData: FuelData;
   onChange: (key: keyof StabilityData, val: number) => void;
+  readOnly?: boolean;
 }
 
-const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange }) => {
+const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange, readOnly }) => {
   const [showCalcModal, setShowCalcModal] = useState(false);
   const meanDraft = (data.draftForward + data.draftAft) / 2;
   const trim = data.draftForward - data.draftAft; // Positivo = trim para vante
@@ -308,14 +309,22 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange }) => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 w-full sm:w-auto">
-          <div className="bg-blue-600/10 border-2 border-blue-500/20 rounded-xl sm:rounded-2xl px-4 py-2 sm:px-6 sm:py-4 text-center">
-            <p className="font-black text-blue-400 uppercase text-[8px] sm:text-[10px] mb-1 tracking-widest">CALADO MÉDIO</p>
-            <p className="font-black text-white text-xl sm:text-3xl lg:text-4xl">{meanDraft.toFixed(2)}m</p>
-          </div>
-          <div className="bg-indigo-600/10 border-2 border-indigo-500/20 rounded-xl sm:rounded-2xl px-4 py-2 sm:px-6 sm:py-4 text-center">
-            <p className="font-black text-indigo-400 uppercase text-[8px] sm:text-[10px] mb-1 tracking-widest">DESLOCAMENTO</p>
-            <p className="font-black text-white text-xl sm:text-3xl lg:text-4xl">{formatPrecisionNumber(displayDisplacement, 3)} t</p>
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          {readOnly && (
+            <span className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/40 text-amber-300 rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow-sm">
+              <Lock size={12} /> Somente Leitura
+            </span>
+          )}
+
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 w-full sm:w-auto">
+            <div className="bg-blue-600/10 border-2 border-blue-500/20 rounded-xl sm:rounded-2xl px-4 py-2 sm:px-6 sm:py-4 text-center">
+              <p className="font-black text-blue-400 uppercase text-[8px] sm:text-[10px] mb-1 tracking-widest">CALADO MÉDIO</p>
+              <p className="font-black text-white text-xl sm:text-3xl lg:text-4xl">{meanDraft.toFixed(2)}m</p>
+            </div>
+            <div className="bg-indigo-600/10 border-2 border-indigo-500/20 rounded-xl sm:rounded-2xl px-4 py-2 sm:px-6 sm:py-4 text-center">
+              <p className="font-black text-indigo-400 uppercase text-[8px] sm:text-[10px] mb-1 tracking-widest">DESLOCAMENTO</p>
+              <p className="font-black text-white text-xl sm:text-3xl lg:text-4xl">{formatPrecisionNumber(displayDisplacement, 3)} t</p>
+            </div>
           </div>
         </div>
       </div>
@@ -413,13 +422,13 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange }) => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-        {renderInput("Calado AV", data.draftForward, (v) => onChange('draftForward', v), "m", <MoveVertical size={18} />)}
-        {renderInput("Calado AR", data.draftAft, (v) => onChange('draftAft', v), "m", <MoveVertical size={18} />)}
+        {renderInput("Calado AV", data.draftForward, (v) => onChange('draftForward', v), "m", <MoveVertical size={18} />, "0.1", readOnly)}
+        {renderInput("Calado AR", data.draftAft, (v) => onChange('draftAft', v), "m", <MoveVertical size={18} />, "0.1", readOnly)}
         
         {renderInput("GM", hydrostatics.gm, (v) => onChange('gm', v), "m", <Anchor size={18} />, "0.1", true)}
 
-        {renderInput("Banda BB", data.heel < 0 ? Math.abs(data.heel) : 0, handleBBChange, "°", <Activity size={18} />)}
-        {renderInput("Banda BE", data.heel > 0 ? Math.abs(data.heel) : 0, handleBEChange, "°", <Activity size={18} />)}
+        {renderInput("Banda BB", data.heel < 0 ? Math.abs(data.heel) : 0, handleBBChange, "°", <Activity size={18} />, "0.1", readOnly)}
+        {renderInput("Banda BE", data.heel > 0 ? Math.abs(data.heel) : 0, handleBEChange, "°", <Activity size={18} />, "0.1", readOnly)}
 
         <div className="bg-slate-800/40 border border-slate-700/40 rounded-xl p-4 sm:p-5 shadow-inner transition-all hover:bg-slate-800/60 group">
           <div className="flex items-center justify-between gap-4">

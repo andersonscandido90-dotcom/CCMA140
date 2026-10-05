@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { FuelData } from '../types';
-import { Droplet, Waves, Plane, LucideIcon, Cog, AlertCircle } from 'lucide-react';
+import { Droplet, Waves, Plane, LucideIcon, Cog, AlertCircle, Lock } from 'lucide-react';
 
 interface Props {
   fuel: FuelData;
   onChange: (key: keyof FuelData, val: number) => void;
   fullWidth?: boolean;
+  readOnly?: boolean;
 }
 
 // Formata números sem arredondamento indesejado, preservando a precisão real necessária
@@ -59,9 +60,10 @@ interface FuelItemCardProps {
   maxValue: number;
   onChange: (key: keyof FuelData, val: number) => void;
   fullWidth?: boolean;
+  readOnly?: boolean;
 }
 
-const FuelItemCard: React.FC<FuelItemCardProps> = ({ item, currentVal, maxValue, onChange }) => {
+const FuelItemCard: React.FC<FuelItemCardProps> = ({ item, currentVal, maxValue, onChange, readOnly }) => {
   // Estado local para digitação natural sem conflitos com o cursor ou o zero inicial
   const [strVal, setStrVal] = useState<string>(() => (currentVal === 0 ? '' : String(currentVal)));
   const [isFocused, setIsFocused] = useState<boolean>(false);
@@ -173,13 +175,15 @@ const FuelItemCard: React.FC<FuelItemCardProps> = ({ item, currentVal, maxValue,
                 inputMode="decimal"
                 value={capStr}
                 placeholder="0"
+                disabled={readOnly}
                 onFocus={(e) => {
+                  if (readOnly) return;
                   setIsCapFocused(true);
                   e.target.select();
                 }}
                 onBlur={handleCapBlur}
                 onChange={handleCapChange}
-                className="bg-slate-900/50 border border-slate-800 rounded-md sm:rounded-lg px-1.5 py-0.5 text-blue-400 font-black w-16 sm:w-24 text-[9px] sm:text-sm focus:outline-none focus:border-blue-500 transition-all placeholder:text-slate-600"
+                className={`bg-slate-900/50 border border-slate-800 rounded-md sm:rounded-lg px-1.5 py-0.5 text-blue-400 font-black w-16 sm:w-24 text-[9px] sm:text-sm focus:outline-none focus:border-blue-500 transition-all placeholder:text-slate-600 ${readOnly ? 'cursor-not-allowed opacity-80' : ''}`}
               />
               <span className="text-slate-600 font-bold text-[7px] sm:text-[10px] uppercase">m³</span>
             </div>
@@ -201,13 +205,15 @@ const FuelItemCard: React.FC<FuelItemCardProps> = ({ item, currentVal, maxValue,
             inputMode="decimal"
             value={strVal}
             placeholder="0"
+            disabled={readOnly}
             onFocus={(e) => {
+              if (readOnly) return;
               setIsFocused(true);
               e.target.select();
             }}
             onBlur={handleInputBlur}
             onChange={handleInputChange}
-            className={`bg-transparent font-black w-full focus:outline-none tracking-tighter text-4xl sm:text-7xl lg:text-9xl transition-colors placeholder:text-slate-700 ${isFull ? 'text-blue-400' : 'text-white hover:text-blue-400 focus:text-blue-400'}`}
+            className={`bg-transparent font-black w-full focus:outline-none tracking-tighter text-4xl sm:text-7xl lg:text-9xl transition-colors placeholder:text-slate-700 ${readOnly ? 'cursor-not-allowed opacity-90' : isFull ? 'text-blue-400' : 'text-white hover:text-blue-400 focus:text-blue-400'}`}
           />
           <span className="text-slate-500 font-black uppercase tracking-widest text-sm sm:text-2xl lg:text-4xl shrink-0">
             {item.unit}
@@ -250,7 +256,7 @@ const FuelItemCard: React.FC<FuelItemCardProps> = ({ item, currentVal, maxValue,
   );
 };
 
-const FuelPanel: React.FC<Props> = ({ fuel, onChange, fullWidth }) => {
+const FuelPanel: React.FC<Props> = ({ fuel, onChange, fullWidth, readOnly }) => {
   const items: {
     key: keyof FuelData;
     maxKey: keyof FuelData;
@@ -278,17 +284,24 @@ const FuelPanel: React.FC<Props> = ({ fuel, onChange, fullWidth }) => {
           </div>
           Cargas Líquidas
         </h3>
-        {fullWidth && (
-          <div className="bg-slate-950/80 border border-slate-800 px-3 py-2 sm:px-8 sm:py-4 rounded-xl sm:rounded-[2rem] flex flex-row sm:flex-col items-center sm:items-end gap-3 sm:gap-1 shadow-inner w-full sm:w-auto justify-between">
-            <span className="font-black text-slate-500 uppercase tracking-widest text-[8px] lg:text-xs">Volume Total</span>
-            <div className="flex items-baseline gap-2">
-              <span className="font-black text-blue-400 text-xl sm:text-3xl lg:text-5xl tracking-tighter">
-                {formatPrecisionNumber(totalVolume)}
-              </span>
-              <span className="font-black text-slate-600 text-[10px] sm:text-xl uppercase tracking-widest sm:tracking-normal">m³</span>
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          {readOnly && (
+            <span className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/40 text-amber-300 rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow-sm">
+              <Lock size={12} /> Somente Leitura
+            </span>
+          )}
+          {fullWidth && (
+            <div className="bg-slate-950/80 border border-slate-800 px-3 py-2 sm:px-6 sm:py-3 rounded-xl sm:rounded-[1.5rem] flex flex-row sm:flex-col items-center sm:items-end gap-2 sm:gap-0.5 shadow-inner shrink-0">
+              <span className="font-black text-slate-500 uppercase tracking-widest text-[8px] lg:text-[10px]">Volume Total</span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="font-black text-blue-400 text-lg sm:text-2xl lg:text-4xl tracking-tighter">
+                  {formatPrecisionNumber(totalVolume)}
+                </span>
+                <span className="font-black text-slate-600 text-[10px] sm:text-base uppercase tracking-widest sm:tracking-normal">m³</span>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       
       <div className={`grid gap-3 sm:gap-8 lg:gap-12 ${fullWidth ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
@@ -300,6 +313,7 @@ const FuelPanel: React.FC<Props> = ({ fuel, onChange, fullWidth }) => {
             maxValue={fuel[item.maxKey] || 1}
             onChange={onChange}
             fullWidth={fullWidth}
+            readOnly={readOnly}
           />
         ))}
       </div>

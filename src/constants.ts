@@ -103,7 +103,7 @@ export const SHIP_CONFIG = {
   name: "NAM ATLÂNTICO",
   hullNumber: "A140",
   designation: "Navio-Aeródromo Multipropósito",
-  badgeUrl: "https://tse3.mm.bing.net/th/id/OIP.LNrxq3XEZYXeVQv73TZEtQAAAA?rs=1&pid=ImgDetMain&o=7&rm=3"
+  badgeUrl: "" // Removida URL externa do Bing para evitar vazamento de dados de rede
 };
 
 export interface EductorInfo {

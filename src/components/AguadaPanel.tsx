@@ -14,7 +14,8 @@ import {
   CheckCircle2,
   Info,
   Flame,
-  Zap
+  Zap,
+  Lock
 } from 'lucide-react';
 import { AguadaData, HidrometroEntry, TanqueAguadaEntry, EquipmentData, EquipmentStatus, PersonnelData } from '../types';
 import { SHIP_CONFIG } from '../constants';
@@ -83,6 +84,7 @@ interface AguadaPanelProps {
   shipName?: string;
   selectedDate?: string;
   rawSelectedDate?: string;
+  readOnly?: boolean;
 }
 
 export default function AguadaPanel({ 
@@ -92,7 +94,8 @@ export default function AguadaPanel({
   personnelData,
   shipName = 'NAVIO', 
   selectedDate = '',
-  rawSelectedDate = ''
+  rawSelectedDate = '',
+  readOnly = false
 }: AguadaPanelProps) {
   const [showPrintModal, setShowPrintModal] = useState(false);
   const printSheetRef = useRef<HTMLDivElement>(null);
@@ -275,16 +278,19 @@ export default function AguadaPanel({
 
   // Handlers para Atualizações
   const updateField = (patch: Partial<AguadaData>) => {
+    if (readOnly) return;
     onChange({ ...currentData, ...patch });
   };
 
   const handleHidrometroChange = (index: number, field: keyof HidrometroEntry, value: any) => {
+    if (readOnly) return;
     const updated = [...currentData.hidrometros];
     updated[index] = { ...updated[index], [field]: value };
     updateField({ hidrometros: updated });
   };
 
   const addHidrometroRow = () => {
+    if (readOnly) return;
     const newRow: HidrometroEntry = {
       id: Date.now().toString(),
       descricao: `Hidrômetro ${currentData.hidrometros.length + 1}`,
@@ -295,30 +301,27 @@ export default function AguadaPanel({
   };
 
   const removeHidrometroRow = (index: number) => {
+    if (readOnly) return;
     if (currentData.hidrometros.length <= 1) return;
     const updated = currentData.hidrometros.filter((_, i) => i !== index);
     updateField({ hidrometros: updated });
   };
 
   const handleTanqueSondagemChange = (index: number, value: number | '') => {
+    if (readOnly) return;
     const updated = [...currentData.tanquesAtuais];
     updated[index] = { ...updated[index], sondagem: value };
     updateField({ tanquesAtuais: updated });
   };
 
   const syncBagFromEquipment = () => {
+    if (readOnly) return;
     const formatted = activeBags.length > 0 
       ? activeBags.join(', ') + ' (EM SERVIÇO)' 
       : 'NENHUMA BAG EM SERVIÇO';
     updateField({
       bagSvc: { ...currentData.bagSvc, nivel: formatted }
     });
-  };
-
-  const resetData = () => {
-    if (window.confirm('Deseja redefinir os dados da Papeleta de Aguada para os valores padrão?')) {
-      onChange(DEFAULT_AGUADA);
-    }
   };
 
   const triggerPrint = () => {
@@ -344,6 +347,12 @@ export default function AguadaPanel({
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+          {readOnly && (
+            <span className="px-3 py-2 bg-amber-500/10 border border-amber-500/40 text-amber-300 rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow-sm">
+              <Lock size={13} className="text-amber-400" />
+              <span>Registro Bloqueado • Modo Consulta</span>
+            </span>
+          )}
           <button
             onClick={() => setShowPrintModal(true)}
             className="flex-1 md:flex-initial flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase px-4 py-3 rounded-xl transition-all shadow-lg shadow-blue-900/30 active:scale-95"
@@ -351,13 +360,6 @@ export default function AguadaPanel({
           >
             <Printer size={16} />
             <span>Imprimir Papeleta</span>
-          </button>
-          <button
-            onClick={resetData}
-            className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase px-3 py-3 rounded-xl transition-all border border-slate-700"
-            title="Redefinir dados"
-          >
-            <RefreshCw size={15} />
           </button>
         </div>
       </div>
@@ -477,8 +479,9 @@ export default function AguadaPanel({
             </div>
             <select
               value={currentData.tanqueEmConsumo}
+              disabled={readOnly}
               onChange={(e) => updateField({ tanqueEmConsumo: e.target.value })}
-              className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2.5 px-3 text-xs font-black text-white focus:border-amber-500 outline-none uppercase"
+              className={`w-full bg-slate-900 border border-slate-800 rounded-lg py-2.5 px-3 text-xs font-black text-white focus:border-amber-500 outline-none uppercase ${readOnly ? 'cursor-not-allowed opacity-80' : ''}`}
             >
               <option value="NENHUM">Nenhum / Em Paralelo</option>
               {currentData.tanquesAtuais.map(t => (
@@ -500,8 +503,9 @@ export default function AguadaPanel({
             </div>
             <select
               value={currentData.tanqueRecebendo}
+              disabled={readOnly}
               onChange={(e) => updateField({ tanqueRecebendo: e.target.value })}
-              className="w-full bg-slate-900 border border-slate-800 rounded-lg py-2.5 px-3 text-xs font-black text-white focus:border-emerald-500 outline-none uppercase"
+              className={`w-full bg-slate-900 border border-slate-800 rounded-lg py-2.5 px-3 text-xs font-black text-white focus:border-emerald-500 outline-none uppercase ${readOnly ? 'cursor-not-allowed opacity-80' : ''}`}
             >
               <option value="NENHUM">Nenhum / Sem Recebimento</option>
               {currentData.tanquesAtuais.map(t => (
@@ -539,7 +543,7 @@ export default function AguadaPanel({
                   <label className="text-[10px] font-black uppercase text-slate-400 block">
                     Volume em m³ (Sondagem Anterior)
                   </label>
-                  {prevDayInfo && (
+                  {prevDayInfo && !readOnly && (
                     <button
                       type="button"
                       onClick={() => updateField({ sondagemAnterior: prevDayInfo.volume })}
@@ -555,6 +559,7 @@ export default function AguadaPanel({
                   type="number"
                   step="any"
                   min="0"
+                  disabled={readOnly}
                   value={currentData.sondagemAnterior}
                   onFocus={(e) => e.target.select()}
                   onChange={(e) => {
@@ -568,7 +573,7 @@ export default function AguadaPanel({
                     updateField({ sondagemAnterior: isNaN(num) ? '' : num });
                   }}
                   placeholder="Ex: 150.0"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-base font-black text-white focus:border-amber-500 outline-none transition-all"
+                  className={`w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-base font-black text-white focus:border-amber-500 outline-none transition-all ${readOnly ? 'cursor-not-allowed opacity-80' : ''}`}
                 />
               </div>
             </div>
@@ -583,13 +588,15 @@ export default function AguadaPanel({
                   Recebimento de Água (Hidrômetro) (B)
                 </h3>
               </div>
-              <button
-                onClick={addHidrometroRow}
-                className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold uppercase px-2.5 py-1.5 rounded-lg transition-all"
-              >
-                <Plus size={14} />
-                <span>Adicionar</span>
-              </button>
+              {!readOnly && (
+                <button
+                  onClick={addHidrometroRow}
+                  className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold uppercase px-2.5 py-1.5 rounded-lg transition-all"
+                >
+                  <Plus size={14} />
+                  <span>Adicionar</span>
+                </button>
+              )}
             </div>
 
             {/* Tabela de Hidrômetros */}
@@ -615,16 +622,18 @@ export default function AguadaPanel({
                         <td className="py-2 px-2">
                           <input
                             type="text"
+                            disabled={readOnly}
                             value={item.descricao}
                             onChange={(e) => handleHidrometroChange(idx, 'descricao', e.target.value)}
                             placeholder="Descrição / Cais"
-                            className="w-full bg-slate-950 border border-slate-800 rounded-lg py-1.5 px-2 text-xs font-semibold text-slate-200 focus:border-emerald-500 outline-none"
+                            className={`w-full bg-slate-950 border border-slate-800 rounded-lg py-1.5 px-2 text-xs font-semibold text-slate-200 focus:border-emerald-500 outline-none ${readOnly ? 'cursor-not-allowed opacity-80' : ''}`}
                           />
                         </td>
                         <td className="py-2 px-2">
                           <input
                             type="number"
                             step="any"
+                            disabled={readOnly}
                             value={item.inicio}
                             onFocus={(e) => e.target.select()}
                             onChange={(e) => {
@@ -638,13 +647,14 @@ export default function AguadaPanel({
                               handleHidrometroChange(idx, 'inicio', isNaN(num) ? '' : num);
                             }}
                             placeholder="0.0"
-                            className="w-full bg-slate-950 border border-slate-800 rounded-lg py-1.5 px-2 text-xs font-bold text-white text-right focus:border-emerald-500 outline-none"
+                            className={`w-full bg-slate-950 border border-slate-800 rounded-lg py-1.5 px-2 text-xs font-bold text-white text-right focus:border-emerald-500 outline-none ${readOnly ? 'cursor-not-allowed opacity-80' : ''}`}
                           />
                         </td>
                         <td className="py-2 px-2">
                           <input
                             type="number"
                             step="any"
+                            disabled={readOnly}
                             value={item.fim}
                             onFocus={(e) => e.target.select()}
                             onChange={(e) => {
@@ -658,20 +668,22 @@ export default function AguadaPanel({
                               handleHidrometroChange(idx, 'fim', isNaN(num) ? '' : num);
                             }}
                             placeholder="0.0"
-                            className="w-full bg-slate-950 border border-slate-800 rounded-lg py-1.5 px-2 text-xs font-bold text-white text-right focus:border-emerald-500 outline-none"
+                            className={`w-full bg-slate-950 border border-slate-800 rounded-lg py-1.5 px-2 text-xs font-bold text-white text-right focus:border-emerald-500 outline-none ${readOnly ? 'cursor-not-allowed opacity-80' : ''}`}
                           />
                         </td>
                         <td className="py-2 px-2 text-right font-black text-emerald-400">
                           {diff > 0 ? `+${formatPrecisionNumber(diff)}` : '0'}
                         </td>
                         <td className="py-2 px-1 text-center">
-                          <button
-                            onClick={() => removeHidrometroRow(idx)}
-                            className="text-slate-600 hover:text-red-400 p-1 rounded transition-colors"
-                            title="Remover linha"
-                          >
-                            <Trash2 size={13} />
-                          </button>
+                          {!readOnly && (
+                            <button
+                              onClick={() => removeHidrometroRow(idx)}
+                              className="text-slate-600 hover:text-red-400 p-1 rounded transition-colors"
+                              title="Remover linha"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -758,6 +770,7 @@ export default function AguadaPanel({
                             step="any"
                             min="0"
                             max={item.capacidadeMax}
+                            disabled={readOnly}
                             value={item.sondagem}
                             onFocus={(e) => e.target.select()}
                             onChange={(e) => {
@@ -771,7 +784,7 @@ export default function AguadaPanel({
                               handleTanqueSondagemChange(idx, isNaN(num) ? '' : num);
                             }}
                             placeholder="0.0"
-                            className="w-full bg-slate-950 border border-slate-800 rounded-lg py-1.5 px-2 text-xs font-black text-cyan-300 text-right focus:border-cyan-500 outline-none"
+                            className={`w-full bg-slate-950 border border-slate-800 rounded-lg py-1.5 px-2 text-xs font-black text-cyan-300 text-right focus:border-cyan-500 outline-none ${readOnly ? 'cursor-not-allowed opacity-80' : ''}`}
                           />
                         </td>
                         <td className="py-2.5 px-2 text-right">
@@ -818,14 +831,16 @@ export default function AguadaPanel({
                   BAG de Serviço & Tanque de Serviço
                 </h3>
               </div>
-              <button
-                onClick={syncBagFromEquipment}
-                className="flex items-center gap-1.5 bg-blue-900/60 hover:bg-blue-800 text-blue-200 border border-blue-700/60 text-[10px] font-black uppercase px-2.5 py-1 rounded-lg transition-all"
-                title="Sincronizar com o status da aba Equipamentos"
-              >
-                <RefreshCw size={12} />
-                <span>Sincronizar Equipamentos</span>
-              </button>
+              {!readOnly && (
+                <button
+                  onClick={syncBagFromEquipment}
+                  className="flex items-center gap-1.5 bg-blue-900/60 hover:bg-blue-800 text-blue-200 border border-blue-700/60 text-[10px] font-black uppercase px-2.5 py-1 rounded-lg transition-all"
+                  title="Sincronizar com o status da aba Equipamentos"
+                >
+                  <RefreshCw size={12} />
+                  <span>Sincronizar Equipamentos</span>
+                </button>
+              )}
             </div>
 
             {/* Banner de Sincronização Automática com Equipamentos */}
@@ -853,10 +868,11 @@ export default function AguadaPanel({
                   <label className="text-[10px] font-bold text-slate-400 block mb-1 uppercase">Nível / Status da BAG</label>
                   <input
                     type="text"
+                    disabled={readOnly}
                     value={currentData.bagSvc.nivel}
                     onChange={(e) => updateField({ bagSvc: { ...currentData.bagSvc, nivel: e.target.value } })}
                     placeholder="Ex: BAG 1, BAG 2 (Em Serviço)"
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs font-bold text-white focus:border-blue-500 outline-none"
+                    className={`w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs font-bold text-white focus:border-blue-500 outline-none ${readOnly ? 'cursor-not-allowed opacity-80' : ''}`}
                   />
                 </div>
               </div>
@@ -873,8 +889,9 @@ export default function AguadaPanel({
                   <label className="text-[10px] font-bold text-slate-400 block mb-1 uppercase">Tanque em Consumo</label>
                   <select
                     value={currentData.tanqueEmConsumo}
+                    disabled={readOnly}
                     onChange={(e) => updateField({ tanqueEmConsumo: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs font-black text-amber-300 focus:border-amber-500 outline-none uppercase"
+                    className={`w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs font-black text-amber-300 focus:border-amber-500 outline-none uppercase ${readOnly ? 'cursor-not-allowed opacity-80' : ''}`}
                   >
                     <option value="NENHUM">NENHUM TANQUE SELECIONADO</option>
                     {currentData.tanquesAtuais.map(t => (
@@ -914,10 +931,11 @@ export default function AguadaPanel({
               <div className="relative">
                 <input
                   type="text"
+                  disabled={readOnly}
                   value={currentData.fielAguadaNome}
                   onChange={(e) => updateField({ fielAguadaNome: e.target.value })}
                   placeholder="NOME DO MILITAR RESPONSÁVEL..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 px-4 pl-10 text-xs font-black uppercase text-white focus:border-blue-500 outline-none"
+                  className={`w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 px-4 pl-10 text-xs font-black uppercase text-white focus:border-blue-500 outline-none ${readOnly ? 'cursor-not-allowed opacity-80' : ''}`}
                 />
                 <User size={15} className="absolute left-3.5 top-3 text-slate-500" />
               </div>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { EquipmentData, EquipmentStatus } from '../types';
 import { STATUS_CONFIG } from '../constants';
 import { 
@@ -13,7 +13,8 @@ import {
   Clock, 
   ShieldAlert,
   Trash2,
-  CheckCircle2
+  CheckCircle2,
+  Lock
 } from 'lucide-react';
 import { 
   getPreviousRestrictionInfo, 
@@ -27,6 +28,7 @@ interface Props {
   onPrintSupervision?: () => void;
   currentDate?: string;
   onSyncPreviousDay?: () => void;
+  readOnly?: boolean;
 }
 
 export default function RestrictionsPanel({ 
@@ -35,7 +37,8 @@ export default function RestrictionsPanel({
   onReasonChange, 
   onPrintSupervision,
   currentDate = new Date().toISOString().split('T')[0],
-  onSyncPreviousDay
+  onSyncPreviousDay,
+  readOnly = false
 }: Props) {
   const [copiedItem, setCopiedItem] = useState<string | null>(null);
   const [justSynced, setJustSynced] = useState(false);
@@ -46,6 +49,28 @@ export default function RestrictionsPanel({
       ([_, status]) => status === EquipmentStatus.RESTRICTED || status === EquipmentStatus.UNAVAILABLE
     );
   }, [data]);
+
+  // Efeito automático para fazer os dados escritos voltarem assim que o operador do dia seguinte
+  // atualizar o status do equipamento para RESTRICTED ou UNAVAILABLE
+  useEffect(() => {
+    if (readOnly) return;
+    restrictedItems.forEach(([item, status]) => {
+      const existing = (reasons[item] || '').trim();
+      if (!existing) {
+        const priorInfo = getPreviousRestrictionInfo(item, currentDate, status);
+        if (priorInfo && priorInfo.reason && priorInfo.reason.trim()) {
+          onReasonChange(item, priorInfo.reason.trim());
+        } else {
+          try {
+            const master = JSON.parse(localStorage.getItem('master_equipment_reasons') || '{}');
+            if (master[item] && master[item].trim()) {
+              onReasonChange(item, master[item].trim());
+            }
+          } catch (e) {}
+        }
+      }
+    });
+  }, [restrictedItems, currentDate]);
 
   // Contadores
   const countRestricted = useMemo(() => {
@@ -97,28 +122,35 @@ export default function RestrictionsPanel({
 
           {/* BOTÕES DE AÇÃO SUPERIORES */}
           <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-            {onSyncPreviousDay && (
-              <button
-                onClick={handleManualSync}
-                className={`px-4 py-2.5 rounded-xl font-bold text-xs uppercase flex items-center justify-center gap-2 transition-all border active:scale-95 cursor-pointer shadow-md ${
-                  justSynced
-                    ? 'bg-emerald-600/30 border-emerald-500 text-emerald-300'
-                    : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200'
-                }`}
-                title="Carregar informações de restrição do dia anterior para equipamentos que continuam com o mesmo status"
-              >
-                {justSynced ? (
-                  <>
-                    <CheckCircle2 size={15} className="text-emerald-400" />
-                    <span>Sincronizado!</span>
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw size={15} className="text-blue-400" />
-                    <span>Recarregar do Dia Anterior</span>
-                  </>
-                )}
-              </button>
+            {readOnly ? (
+              <span className="px-3 py-2 bg-amber-500/10 border border-amber-500/40 text-amber-300 rounded-xl text-xs font-black uppercase flex items-center gap-2 shadow-sm">
+                <Lock size={13} className="text-amber-400 shrink-0" />
+                <span>Registro Bloqueado • Modo Consulta</span>
+              </span>
+            ) : (
+              onSyncPreviousDay && (
+                <button
+                  onClick={handleManualSync}
+                  className={`px-4 py-2.5 rounded-xl font-bold text-xs uppercase flex items-center justify-center gap-2 transition-all border active:scale-95 cursor-pointer shadow-md ${
+                    justSynced
+                      ? 'bg-emerald-600/30 border-emerald-500 text-emerald-300'
+                      : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200'
+                  }`}
+                  title="Carregar informações de restrição do dia anterior para equipamentos que continuam com o mesmo status"
+                >
+                  {justSynced ? (
+                    <>
+                      <CheckCircle2 size={15} className="text-emerald-400" />
+                      <span>Sincronizado!</span>
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw size={15} className="text-blue-400" />
+                      <span>Recarregar do Dia Anterior</span>
+                    </>
+                  )}
+                </button>
+              )
             )}
 
             {onPrintSupervision && (
@@ -196,12 +228,20 @@ export default function RestrictionsPanel({
           <div className="space-y-4">
             {restrictedItems.map(([item, status]) => {
               const config = STATUS_CONFIG[status];
-              const currentReason = reasons[item] || '';
+              const priorInfo = getPreviousRestrictionInfo(item, currentDate, status);
+              const masterFallback = (() => {
+                try {
+                  const master = JSON.parse(localStorage.getItem('master_equipment_reasons') || '{}');
+                  return master[item] || '';
+                } catch { return ''; }
+              })();
+              const currentReason = (reasons[item] !== undefined && reasons[item].trim() !== '')
+                ? reasons[item]
+                : (priorInfo?.reason || masterFallback || '');
               const isUnavailable = status === EquipmentStatus.UNAVAILABLE;
 
               // Obtém histórico da restrição (tempo contínuo e dia anterior)
               const streak = getRestrictionStreak(item, currentDate);
-              const priorInfo = getPreviousRestrictionInfo(item, currentDate, status);
               const hasPriorHistory = !!priorInfo && priorInfo.reason !== '';
               const hasPriorDifferentText = hasPriorHistory && priorInfo?.reason !== currentReason.trim();
 
@@ -250,7 +290,7 @@ export default function RestrictionsPanel({
                         <span>Motivo da Restrição / Ação em Andamento / Previsão:</span>
                       </label>
 
-                      {hasPriorDifferentText && priorInfo && (
+                      {hasPriorDifferentText && priorInfo && !readOnly && (
                         <button
                           type="button"
                           onClick={() => onReasonChange(item, priorInfo.reason)}
@@ -265,9 +305,10 @@ export default function RestrictionsPanel({
 
                     <textarea
                       value={currentReason}
+                      disabled={readOnly}
                       onChange={(e) => onReasonChange(item, e.target.value)}
-                      placeholder="Descreva o motivo da restrição, diagnóstico técnico, sobressalentes pendentes ou prazo de prontidão..."
-                      className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-2xl p-4 text-white text-sm font-mono outline-none resize-y min-h-[90px] leading-relaxed shadow-inner"
+                      placeholder={readOnly ? "Sem justificativa registrada para esta data." : "Descreva o motivo da restrição, diagnóstico técnico, sobressalentes pendentes ou prazo de prontidão..."}
+                      className={`w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-2xl p-4 text-white text-sm font-mono outline-none resize-y min-h-[90px] leading-relaxed shadow-inner ${readOnly ? 'cursor-not-allowed opacity-85' : ''}`}
                     />
                   </div>
 

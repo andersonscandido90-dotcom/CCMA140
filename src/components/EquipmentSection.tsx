@@ -16,7 +16,8 @@ import {
   X,
   Plus,
   Trash2,
-  RotateCcw
+  RotateCcw,
+  Lock
 } from 'lucide-react';
 import { EquipmentCategory, EquipmentData, EquipmentStatus, CustomEquipment } from '../types';
 import { STATUS_CONFIG, EQUIPMENT_LOCATIONS } from '../constants';
@@ -33,6 +34,7 @@ interface Props {
   onDeleteEquipment?: (name: string) => void;
   onRestoreEquipment?: (name: string) => void;
   onResetStatuses?: () => void;
+  readOnly?: boolean;
 }
 
 const SnowLayer: React.FC = () => {
@@ -72,7 +74,8 @@ const EquipmentSection: React.FC<Props> = ({
   onAddEquipment,
   onDeleteEquipment,
   onRestoreEquipment,
-  onResetStatuses
+  onResetStatuses,
+  readOnly = false
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | EquipmentStatus>('ALL');
@@ -215,48 +218,57 @@ const EquipmentSection: React.FC<Props> = ({
 
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {onAddEquipment && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModalTab('add');
-                    setIsAddModalOpen(true);
-                  }}
-                  className="px-3 sm:px-4 py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-all active:scale-95 cursor-pointer whitespace-nowrap border border-blue-400/30"
-                >
-                  <Plus size={16} />
-                  <span>Novo Equipamento</span>
-                </button>
-              )}
+              {readOnly ? (
+                <div className="px-3 sm:px-4 py-2.5 sm:py-3 bg-amber-500/10 border border-amber-500/40 text-amber-300 rounded-xl text-xs font-black uppercase flex items-center gap-2 shadow-sm">
+                  <Lock size={14} className="text-amber-400 shrink-0" />
+                  <span>Registro Bloqueado • Modo Consulta</span>
+                </div>
+              ) : (
+                <>
+                  {onAddEquipment && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setModalTab('add');
+                        setIsAddModalOpen(true);
+                      }}
+                      className="px-3 sm:px-4 py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-all active:scale-95 cursor-pointer whitespace-nowrap border border-blue-400/30"
+                    >
+                      <Plus size={16} />
+                      <span>Novo Equipamento</span>
+                    </button>
+                  )}
 
-              {onDeleteEquipment && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModalTab('delete');
-                    setIsAddModalOpen(true);
-                  }}
-                  className="px-3 sm:px-4 py-2.5 sm:py-3 bg-slate-950 hover:bg-red-950/40 text-slate-300 hover:text-red-300 hover:border-red-500/50 font-black text-xs uppercase tracking-wider rounded-xl shadow-md flex items-center justify-center gap-1.5 sm:gap-2 transition-all active:scale-95 cursor-pointer whitespace-nowrap border border-slate-800"
-                >
-                  <Trash2 size={15} className="text-red-400" />
-                  <span>Excluir Equipamento</span>
-                </button>
-              )}
+                  {onDeleteEquipment && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setModalTab('delete');
+                        setIsAddModalOpen(true);
+                      }}
+                      className="px-3 sm:px-4 py-2.5 sm:py-3 bg-slate-950 hover:bg-red-950/40 text-slate-300 hover:text-red-300 hover:border-red-500/50 font-black text-xs uppercase tracking-wider rounded-xl shadow-md flex items-center justify-center gap-1.5 sm:gap-2 transition-all active:scale-95 cursor-pointer whitespace-nowrap border border-slate-800"
+                    >
+                      <Trash2 size={15} className="text-red-400" />
+                      <span>Excluir Equipamento</span>
+                    </button>
+                  )}
 
-              {onResetStatuses && (
-                <button
-                  type="button"
-                  onClick={handleResetClick}
-                  className={`px-3 sm:px-4 py-2.5 sm:py-3 font-black text-xs uppercase tracking-wider rounded-xl shadow-md flex items-center justify-center gap-1.5 sm:gap-2 transition-all active:scale-95 cursor-pointer whitespace-nowrap border ${
-                    confirmReset
-                      ? 'bg-amber-600 hover:bg-amber-500 text-white border-amber-400/50 animate-pulse'
-                      : 'bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border-slate-800'
-                  }`}
-                  title="Zerar status dos equipamentos desta data (todos voltam para Disponível/Verde). As informações de restrições continuam salvas."
-                >
-                  <RotateCcw size={15} className={confirmReset ? 'text-white' : 'text-slate-400'} />
-                  <span>{confirmReset ? 'Confirmar Zerar?' : 'Zerar Status'}</span>
-                </button>
+                  {onResetStatuses && (
+                    <button
+                      type="button"
+                      onClick={handleResetClick}
+                      className={`px-3 sm:px-4 py-2.5 sm:py-3 font-black text-xs uppercase tracking-wider rounded-xl shadow-md flex items-center justify-center gap-1.5 sm:gap-2 transition-all active:scale-95 cursor-pointer whitespace-nowrap border ${
+                        confirmReset
+                          ? 'bg-amber-600 hover:bg-amber-500 text-white border-amber-400/50 animate-pulse'
+                          : 'bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border-slate-800'
+                      }`}
+                      title="Zerar status dos equipamentos desta data (todos voltam para Disponível/Verde). As informações de restrições continuam salvas."
+                    >
+                      <RotateCcw size={15} className={confirmReset ? 'text-white' : 'text-slate-400'} />
+                      <span>{confirmReset ? 'Confirmar Zerar?' : 'Zerar Status'}</span>
+                    </button>
+                  )}
+                </>
               )}
             </div>
 
@@ -338,19 +350,28 @@ const EquipmentSection: React.FC<Props> = ({
                 return (
                   <button 
                     key={item}
-                    onClick={() => onStatusChange(item)}
+                    type="button"
+                    disabled={readOnly}
+                    onClick={() => !readOnly && onStatusChange(item)}
                     className={`relative transition-all duration-300 border-2 sm:border-[3px] lg:border-[4px] rounded-xl sm:rounded-[1.5rem] lg:rounded-[2.5rem] p-3 sm:p-4 lg:p-6 flex flex-col justify-between min-h-[140px] sm:min-h-[180px] lg:min-h-[260px] text-left overflow-hidden 
                       ${config.bgColor} ${config.textColor} ${config.borderColor} 
-                      active:scale-95 hover:brightness-110 shadow-lg
+                      ${readOnly ? 'cursor-default opacity-95' : 'active:scale-95 hover:brightness-110 shadow-lg cursor-pointer'}
                       ${status === EquipmentStatus.IN_LINE ? 'active-glow-green' : ''}
                     `}
                   >
                     {showSnow && <SnowLayer />}
 
                     <div className="flex justify-between items-start relative z-10 w-full mb-2">
-                      <span className="font-black uppercase opacity-90 text-[8px] sm:text-xs lg:text-xl bg-black/40 px-2 py-1 sm:px-4 sm:py-2 rounded-lg lg:rounded-xl border border-white/10 shadow-lg">
-                        #{activeLocations[item] || '??'}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-black uppercase opacity-90 text-[8px] sm:text-xs lg:text-xl bg-black/40 px-2 py-1 sm:px-4 sm:py-2 rounded-lg lg:rounded-xl border border-white/10 shadow-lg">
+                          #{activeLocations[item] || '??'}
+                        </span>
+                        {readOnly && (
+                          <span className="bg-black/50 text-amber-300 p-1 sm:p-1.5 rounded-lg border border-amber-500/30 flex items-center justify-center shrink-0" title="Registro histórico bloqueado">
+                            <Lock size={12} />
+                          </span>
+                        )}
+                      </div>
                       <div className="bg-white/10 p-1 lg:p-2 rounded-lg lg:rounded-2xl shrink-0">
                         {getIcon(item, status, true)}
                       </div>
