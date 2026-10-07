@@ -26,7 +26,8 @@ import {
   Lock
 } from 'lucide-react';
 import { EquipmentStatus, DailyReport, FuelData, EquipmentData, StabilityData, PersonnelData, LogEntry, CorteSoldaEntry, ExtensionEntry, CustomEquipment, EquipmentCategory, CavExerciseEntry } from './types';
-import { CATEGORIES, SHIP_CONFIG, EQUIPMENT_LOCATIONS } from './constants';
+import { CATEGORIES, SHIP_CONFIG, EQUIPMENT_LOCATIONS, getVaultCategories, getVaultLocations } from './constants';
+import { getInitialPhoneDirectory } from './phoneDirectoryData';
 import EquipmentSection from './components/EquipmentSection';
 import FuelPanel from './components/FuelPanel';
 import StabilityPanel from './components/StabilityPanel';
@@ -54,6 +55,11 @@ import {
   setSessionAuthenticated, 
   getAutoLockMinutes 
 } from './utils/security';
+import { 
+  clearVaultData, 
+  isVaultUnlocked, 
+  tryRestoreSessionVault 
+} from './utils/cryptoVault';
 
 const DEFAULT_FUEL: FuelData = { 
   water: 0, lubOil: 0, fuelOil: 0, jp5: 0,
@@ -388,7 +394,32 @@ const App: React.FC = () => {
   const [showBackupModal, setShowBackupModal] = useState(false);
   const [showPrintView, setShowPrintView] = useState(false);
   const [showSupervisionPrintView, setShowSupervisionPrintView] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => isSessionAuthenticated());
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => isSessionAuthenticated() && isVaultUnlocked());
+  const [vaultUnlockedAt, setVaultUnlockedAt] = useState<number>(() => isVaultUnlocked() ? Date.now() : 0);
+
+  // Restauração de sessão criptografada (ex: refresh na mesma aba)
+  useEffect(() => {
+    if (!isAuthenticated) {
+      tryRestoreSessionVault().then(unlocked => {
+        if (unlocked) {
+          setIsAuthenticated(true);
+          setVaultUnlockedAt(Date.now());
+        }
+      });
+    }
+  }, [isAuthenticated]);
+
+  // Carrega catálogo inicial de ramais ao abrir o cofre criptografado
+  useEffect(() => {
+    if (isAuthenticated && isVaultUnlocked()) {
+      setPhoneDirectory(prev => {
+        if (!prev || prev.length === 0) {
+          return getInitialPhoneDirectory();
+        }
+        return prev;
+      });
+    }
+  }, [isAuthenticated, vaultUnlockedAt]);
 
   // Bloqueio automático por inatividade para proteção dos dados sigilosos
   useEffect(() => {
@@ -420,6 +451,7 @@ const App: React.FC = () => {
   }, [isAuthenticated]);
 
   const handleLockApp = () => {
+    clearVaultData();
     setSessionAuthenticated(false);
     setIsAuthenticated(false);
     setSidebarOpen(false);
@@ -427,12 +459,13 @@ const App: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Categorias dinâmicas mesclando as estáticas com os novos equipamentos adicionados, excluindo os removidos
+  // Categorias dinâmicas mesclando as estáticas decifradas com os novos equipamentos adicionados, excluindo os removidos
   const allCategories: EquipmentCategory[] = useMemo(() => {
     const catMap = new Map<string, string[]>();
     const removedSet = new Set(removedEquipments.map(r => r.toLowerCase()));
+    const baseCats = getVaultCategories();
 
-    CATEGORIES.forEach(c => {
+    baseCats.forEach(c => {
       const items = c.items.filter(item => !removedSet.has(item.toLowerCase()));
       catMap.set(c.name, items);
     });
@@ -451,18 +484,18 @@ const App: React.FC = () => {
     return Array.from(catMap.entries())
       .map(([name, items]) => ({ name, items }))
       .filter(c => c.items.length > 0);
-  }, [customEquipments, removedEquipments]);
+  }, [customEquipments, removedEquipments, isAuthenticated, vaultUnlockedAt]);
 
-  // Localizações dinâmicas mesclando as estáticas com os novos equipamentos
+  // Localizações dinâmicas mesclando as estáticas decifradas com os novos equipamentos
   const allLocations: Record<string, string> = useMemo(() => {
-    const locs: Record<string, string> = { ...EQUIPMENT_LOCATIONS };
+    const locs: Record<string, string> = { ...getVaultLocations() };
     customEquipments.forEach(eq => {
       if (eq.location) {
         locs[eq.name] = eq.location;
       }
     });
     return locs;
-  }, [customEquipments]);
+  }, [customEquipments, isAuthenticated, vaultUnlockedAt]);
 
   // Handler para adicionar novo equipamento
   const handleAddEquipment = (newEquip: CustomEquipment, initialStatus: EquipmentStatus) => {
@@ -1077,6 +1110,7 @@ const App: React.FC = () => {
         onUnlock={() => {
           setSessionAuthenticated(true);
           setIsAuthenticated(true);
+          setVaultUnlockedAt(Date.now());
         }}
       />
     );
@@ -1215,6 +1249,7 @@ const App: React.FC = () => {
           removedEquipments
         }}
         categories={allCategories}
+        customLogo={customLogo}
         onClose={() => setShowPrintView(false)}
       />
     );
@@ -1240,6 +1275,7 @@ const App: React.FC = () => {
           customEquipments,
           removedEquipments
         }}
+        customLogo={customLogo}
         onClose={() => setShowSupervisionPrintView(false)}
       />
     );

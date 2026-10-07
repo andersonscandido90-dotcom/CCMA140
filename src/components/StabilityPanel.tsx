@@ -1,16 +1,16 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { StabilityData, FuelData } from '../types';
-import { Compass, MoveVertical, Anchor, Gauge, Ship, Activity, AlertCircle, CheckCircle2, HelpCircle, X, BookOpen, Calculator, Droplets, Lock } from 'lucide-react';
+import { Compass, MoveVertical, Anchor, Gauge, Ship, Activity, AlertCircle, CheckCircle2, HelpCircle, X, BookOpen, Calculator, Droplets } from 'lucide-react';
 import { formatPrecisionNumber } from './FuelPanel';
+import { SHIP_CONFIG } from '../constants';
 
 interface Props {
   data: StabilityData;
   fuelData: FuelData;
   onChange: (key: keyof StabilityData, val: number) => void;
-  readOnly?: boolean;
 }
 
-const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange, readOnly }) => {
+const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange }) => {
   const [showCalcModal, setShowCalcModal] = useState(false);
   const meanDraft = (data.draftForward + data.draftAft) / 2;
   const trim = data.draftForward - data.draftAft; // Positivo = trim para vante
@@ -305,26 +305,18 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange, readOnly })
           </div>
           <div>
             <h3 className="font-black text-white uppercase text-2xl sm:text-4xl lg:text-5xl tracking-tighter">Estabilidade</h3>
-            <p className="text-slate-500 font-black text-[9px] sm:text-xs uppercase tracking-widest">A140 NAM ATLÂNTICO</p>
+            <p className="text-slate-500 font-black text-[9px] sm:text-xs uppercase tracking-widest">{SHIP_CONFIG.name}</p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-          {readOnly && (
-            <span className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/40 text-amber-300 rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow-sm">
-              <Lock size={12} /> Somente Leitura
-            </span>
-          )}
-
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 w-full sm:w-auto">
-            <div className="bg-blue-600/10 border-2 border-blue-500/20 rounded-xl sm:rounded-2xl px-4 py-2 sm:px-6 sm:py-4 text-center">
-              <p className="font-black text-blue-400 uppercase text-[8px] sm:text-[10px] mb-1 tracking-widest">CALADO MÉDIO</p>
-              <p className="font-black text-white text-xl sm:text-3xl lg:text-4xl">{meanDraft.toFixed(2)}m</p>
-            </div>
-            <div className="bg-indigo-600/10 border-2 border-indigo-500/20 rounded-xl sm:rounded-2xl px-4 py-2 sm:px-6 sm:py-4 text-center">
-              <p className="font-black text-indigo-400 uppercase text-[8px] sm:text-[10px] mb-1 tracking-widest">DESLOCAMENTO</p>
-              <p className="font-black text-white text-xl sm:text-3xl lg:text-4xl">{formatPrecisionNumber(displayDisplacement, 3)} t</p>
-            </div>
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 w-full sm:w-auto">
+          <div className="bg-blue-600/10 border-2 border-blue-500/20 rounded-xl sm:rounded-2xl px-4 py-2 sm:px-6 sm:py-4 text-center">
+            <p className="font-black text-blue-400 uppercase text-[8px] sm:text-[10px] mb-1 tracking-widest">CALADO MÉDIO</p>
+            <p className="font-black text-white text-xl sm:text-3xl lg:text-4xl">{meanDraft.toFixed(2)}m</p>
+          </div>
+          <div className="bg-indigo-600/10 border-2 border-indigo-500/20 rounded-xl sm:rounded-2xl px-4 py-2 sm:px-6 sm:py-4 text-center">
+            <p className="font-black text-indigo-400 uppercase text-[8px] sm:text-[10px] mb-1 tracking-widest">DESLOCAMENTO</p>
+            <p className="font-black text-white text-xl sm:text-3xl lg:text-4xl">{formatPrecisionNumber(displayDisplacement, 3)} t</p>
           </div>
         </div>
       </div>
@@ -365,7 +357,7 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange, readOnly })
                 <rect x="360" y="-25" width="8" height="30" fill="#0f172a" />
                 <text x="55" y="195" fontSize="10" fontWeight="900" fill="#475569" textAnchor="middle" className="uppercase tracking-widest">Popa (AR)</text>
                 <text x="445" y="195" fontSize="10" fontWeight="900" fill="#475569" textAnchor="middle" className="uppercase tracking-widest">Proa (AV)</text>
-                <text x="250" y="145" fontSize="14" fontWeight="900" fill="white" opacity="0.1" textAnchor="middle" className="uppercase tracking-[1.2em]">A140</text>
+                <text x="250" y="145" fontSize="14" fontWeight="900" fill="white" opacity="0.1" textAnchor="middle" className="uppercase tracking-[1.2em]">{SHIP_CONFIG.hullNumber || "CCM"}</text>
               </g>
             </svg>
           </div>
@@ -409,7 +401,7 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange, readOnly })
           
           <div className="w-full mt-8 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
             <div className="flex justify-between items-center">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">A140:</span>
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{SHIP_CONFIG.hullNumber || "STATUS"}:</span>
               <div className="flex items-center gap-2">
                 {heelStatus.icon}
                 <span className={`text-sm lg:text-lg font-black ${heelStatus.color} tracking-tight`}>
@@ -422,13 +414,13 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange, readOnly })
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-        {renderInput("Calado AV", data.draftForward, (v) => onChange('draftForward', v), "m", <MoveVertical size={18} />, "0.1", readOnly)}
-        {renderInput("Calado AR", data.draftAft, (v) => onChange('draftAft', v), "m", <MoveVertical size={18} />, "0.1", readOnly)}
+        {renderInput("Calado AV", data.draftForward, (v) => onChange('draftForward', v), "m", <MoveVertical size={18} />)}
+        {renderInput("Calado AR", data.draftAft, (v) => onChange('draftAft', v), "m", <MoveVertical size={18} />)}
         
         {renderInput("GM", hydrostatics.gm, (v) => onChange('gm', v), "m", <Anchor size={18} />, "0.1", true)}
 
-        {renderInput("Banda BB", data.heel < 0 ? Math.abs(data.heel) : 0, handleBBChange, "°", <Activity size={18} />, "0.1", readOnly)}
-        {renderInput("Banda BE", data.heel > 0 ? Math.abs(data.heel) : 0, handleBEChange, "°", <Activity size={18} />, "0.1", readOnly)}
+        {renderInput("Banda BB", data.heel < 0 ? Math.abs(data.heel) : 0, handleBBChange, "°", <Activity size={18} />)}
+        {renderInput("Banda BE", data.heel > 0 ? Math.abs(data.heel) : 0, handleBEChange, "°", <Activity size={18} />)}
 
         <div className="bg-slate-800/40 border border-slate-700/40 rounded-xl p-4 sm:p-5 shadow-inner transition-all hover:bg-slate-800/60 group">
           <div className="flex items-center justify-between gap-4">
@@ -580,7 +572,7 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange, readOnly })
           
           <div className="text-xs text-slate-400 border-t border-slate-700/60 pt-2 flex flex-wrap justify-between items-center gap-2">
             <span className="text-slate-400 font-mono text-[11px]">
-              Fórmulas oficiais calibradas para o <strong className="text-slate-200">NAM Atlântico (A140)</strong>
+              Fórmulas oficiais calibradas para o <strong className="text-slate-200">{SHIP_CONFIG.name}</strong>
             </span>
             <button
               onClick={() => setShowCalcModal(true)}
@@ -614,7 +606,7 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange, readOnly })
                   Papeleta e Memória de Cálculo de Estabilidade
                 </h3>
                 <p className="text-blue-400 font-bold text-xs uppercase tracking-wider">
-                  NAM ATLÂNTICO (A140) — Padrão Oficial da Marinha do Brasil
+                  {SHIP_CONFIG.name} — Padrão Oficial
                 </p>
               </div>
             </div>
@@ -625,7 +617,7 @@ const StabilityPanel: React.FC<Props> = ({ data, fuelData, onChange, readOnly })
               {/* Box da Papeleta */}
               <div className="bg-slate-950 border-2 border-blue-500/30 rounded-2xl p-4 sm:p-6 space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <span className="text-sm font-black uppercase text-blue-400">PAPELETA DE ESTABILIDADE — NAM ATLÂNTICO</span>
+                  <span className="text-sm font-black uppercase text-blue-400">PAPELETA DE ESTABILIDADE — {SHIP_CONFIG.name}</span>
                   <span className="text-xs font-mono text-slate-400">Condição: <strong className="text-white">{hydrostatics.conditionName}</strong></span>
                 </div>
 

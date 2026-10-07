@@ -41,7 +41,7 @@ export default function BackupManagerModal({ currentDate, onSelectDate, onClose 
 
   const handleExportGlobalBackup = () => {
     const allData: Record<string, any> = {
-      app: 'NAM ATLANTICO COMMAND DASHBOARD',
+      app: 'CCM COMMAND DASHBOARD',
       exportedAt: new Date().toISOString(),
       reports: {},
       master_reasons: localStorage.getItem('master_equipment_reasons') || '{}',

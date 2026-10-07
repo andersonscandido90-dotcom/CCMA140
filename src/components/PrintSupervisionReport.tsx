@@ -1,13 +1,15 @@
 import React, { useRef } from 'react';
 import { DailyReport, EquipmentStatus } from '../types';
 import { SHIP_CONFIG, STATUS_CONFIG } from '../constants';
+import { PrintShipLogo } from './PrintShipLogo';
 
 interface Props {
   report: DailyReport;
+  customLogo?: string | null;
   onClose?: () => void;
 }
 
-export default function PrintSupervisionReport({ report, onClose }: Props) {
+export default function PrintSupervisionReport({ report, customLogo, onClose }: Props) {
   const printSheetRef = useRef<HTMLDivElement>(null);
 
   const [year, month, day] = (report.date || new Date().toISOString().split('T')[0]).split('-');
@@ -118,22 +120,7 @@ export default function PrintSupervisionReport({ report, onClose }: Props) {
           {/* Header */}
           <div className="border-b-2 border-black pb-3 mb-5 flex justify-between items-center break-inside-avoid">
             <div className="flex items-center gap-3">
-              <img 
-                src={SHIP_CONFIG.badgeUrl} 
-                alt="Brasão do Navio" 
-                referrerPolicy="no-referrer"
-                className="w-12 h-12 object-contain shrink-0" 
-                onError={(e) => { 
-                  e.currentTarget.style.display = 'none';
-                  const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                  if (fallback) fallback.style.display = 'flex';
-                }}
-              />
-              <div className="hidden w-11 h-11 rounded-full bg-blue-950 text-amber-400 items-center justify-center shrink-0 border border-amber-500 shadow-sm print:bg-transparent print:text-blue-950 print:border-blue-950">
-                <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
-                  <path d="M12 2a2 2 0 0 1 2 2v2.07A6 6 0 0 1 19.93 11H22v2h-2.07A8.002 8.002 0 0 1 13 19.93V22h-2v-2.07A8.002 8.002 0 0 1 4.07 13H2v-2h2.07A6 6 0 0 1 10 6.07V4a2 2 0 0 1 2-2zm0 6a4 4 0 0 0-3.995 3.8L8 12a4 4 0 0 0 8 0 4 4 0 0 0-4-4zm0 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/>
-                </svg>
-              </div>
+              <PrintShipLogo className="w-12 h-12" customLogo={customLogo} />
               <div>
                 <h1 className="font-black text-base sm:text-lg uppercase tracking-wider leading-tight">{SHIP_CONFIG.name} {SHIP_CONFIG.hullNumber}</h1>
                 <h2 className="text-xs font-black uppercase tracking-widest text-black">MARINHA DO BRASIL</h2>

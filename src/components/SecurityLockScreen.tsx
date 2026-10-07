@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Lock, Shield, Eye, EyeOff, KeyRound, AlertCircle, ArrowRight, ShieldCheck, ShieldAlert } from 'lucide-react';
-import { verifyPassword } from '../utils/security';
+import { decryptVault } from '../utils/cryptoVault';
 
 interface SecurityLockScreenProps {
   onUnlock: () => void;
@@ -13,6 +13,7 @@ export const SecurityLockScreen: React.FC<SecurityLockScreenProps> = ({ onUnlock
   const [errorMessage, setErrorMessage] = useState('');
   const [isShaking, setIsShaking] = useState(false);
   const [attempts, setAttempts] = useState(0);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -22,7 +23,7 @@ export const SecurityLockScreen: React.FC<SecurityLockScreenProps> = ({ onUnlock
     }
   }, []);
 
-  const handleUnlock = (e?: React.FormEvent) => {
+  const handleUnlock = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
     if (!password) {
@@ -32,7 +33,11 @@ export const SecurityLockScreen: React.FC<SecurityLockScreenProps> = ({ onUnlock
       return;
     }
 
-    if (verifyPassword(password)) {
+    setIsAuthenticating(true);
+    const vault = await decryptVault(password);
+    setIsAuthenticating(false);
+
+    if (vault) {
       setError(false);
       onUnlock();
     } else {
@@ -128,10 +133,20 @@ export const SecurityLockScreen: React.FC<SecurityLockScreenProps> = ({ onUnlock
 
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-black uppercase text-xs sm:text-sm py-3.5 px-4 rounded-2xl transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer mt-2"
+              disabled={isAuthenticating}
+              className="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.99] disabled:opacity-60 text-white font-black uppercase text-xs sm:text-sm py-3.5 px-4 rounded-2xl transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer mt-2"
             >
-              <span>Desbloquear Terminal</span>
-              <ArrowRight size={16} />
+              {isAuthenticating ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Validando Credencial...</span>
+                </div>
+              ) : (
+                <>
+                  <span>Desbloquear Terminal</span>
+                  <ArrowRight size={16} />
+                </>
+              )}
             </button>
           </form>
 

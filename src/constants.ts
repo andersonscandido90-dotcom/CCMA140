@@ -1,5 +1,6 @@
 import { EquipmentStatus, StatusConfig, EquipmentCategory } from './types';
 import { ISIS_DATA } from './isisData';
+import { getVaultData } from './utils/cryptoVault';
 
 export { ISIS_DATA };
 
@@ -46,65 +47,81 @@ export const STATUS_CONFIG: Record<EquipmentStatus, StatusConfig> = {
   }
 };
 
-export const CATEGORIES: EquipmentCategory[] = [
-  {
-    name: "Propulsão e Geração de Energia",
-    items: ["MCP BB", "MCP BE", "MCA 1", "MCA 2", "MCA 3", "MCA 4", "Gerador de Emerg"]
-  },
-  {
-    name: "Climatização do AR",
-    items: ["URA 1", "URA 2", "URA 3", "URA 4", "URA 5", "URA 6"]
-  },
-  {
-    name: "Osmose e Purificação",
-    items: ["GOR 1", "GOR 2", "GOR 3", "GOR 4", "DEMIN", "Separador de Óleo/Água", "Purificador Óleo Comb 1", "Purificador Óleo Comb 2", "Purificador Óleo Lub 1", "Purificador Óleo Lub 2", "Purificador Redutora 1", "Purificador Redutora 2", "Purificador Óleo Lub GER Diesel"]
-  },
-  {
-    name: "Governo (Leme)",
-    items: ["Maquina do Leme BE 1", "Maquina do Leme BE 2", "Maquina do Leme BB 1", "Maquina do Leme BB 2"]
-  },
-  {
-    name: "Rede de Incêndio",
-    items: ["HPSW 1", "HPSW 2", "HPSW 3", "HPSW 4", "HPSW 5", "Bomba de Serviço 1", "Bomba de Serviço 2", "Bomba de Serviço 3", "MotoBomba 1", "MotoBomba 2", "MotoBomba 3", "MotoBomba 4"]
-  },
-  {
-    name: "Compressores e Bombas de Resfriamento",
-    items: ["LPSW 1", "LPSW 2", "LPSW 3", "LPSW 4", "CAP 1", "CAP 2", "CAP 3", "CMP 1", "CMP 2", "CMP de Emergência", "CBP 1", "CBP 2", "CBP 3", "CBP 4", "CBP 5"]
-  },
-  {
-    name: "Planta Frigorífica e Climatização da Água",
-    items: ["Planta Frigorífica 1", "Planta Frigorífica 2", "BAG 1", "BAG 2", "BAG 3", "BAG 4", "BOILER 1", "BOILER 2", "BOILER 3", "BOILER 4", "Bomba de Água Quente 1", "Bomba de Água Quente 2", "Container 1", "Container 2", "Container 3"]
-  },
-  {
-    name: "Equipamentos Gerais",
-    items: ["Elevador de Aeronaves AV", "Elevador de Aeronaves AR", "Guindaste", "Estabilizador BB", "Estabilizador BE", "Proteção Catódica AV", "Proteção Catódica AR"]
+export const getVaultCategories = (): EquipmentCategory[] => {
+  return getVaultData()?.categories || [];
+};
+
+export const getVaultLocations = (): Record<string, string> => {
+  return getVaultData()?.equipmentLocations || {};
+};
+
+export const getVaultShipConfig = () => {
+  return getVaultData()?.shipConfig || {
+    name: "CENTRO DE CONTROLE DE MÁQUINAS",
+    hullNumber: "",
+    designation: "",
+    badgeUrl: ""
+  };
+};
+
+export const getVaultEductorSections = (): SectionEductorData[] => {
+  return getVaultData()?.eductorSections || [];
+};
+
+/**
+ * Categorias de Equipamentos decifradas na memória.
+ * NENHUM nome de equipamento permanece em texto claro no bundle.
+ */
+export const CATEGORIES: EquipmentCategory[] = new Proxy([] as EquipmentCategory[], {
+  get(target, prop, receiver) {
+    const list = getVaultData()?.categories || [];
+    if (prop === 'length') return list.length;
+    if (prop === Symbol.iterator) return list[Symbol.iterator].bind(list);
+    const val = (list as any)[prop];
+    if (typeof val === 'function') return val.bind(list);
+    return val;
   }
-];
+});
 
-export const EQUIPMENT_LOCATIONS: Record<string, string> = {
-  "MCP BB": "9L", "MCP BE": "9H", "MCA 1": "9H", "MCA 2": "9H", "MCA 3": "9L", "MCA 4": "9L",
-  "Gerador de Emerg": "1K", "URA 1": "9J", "URA 2": "9J", "URA 3": "9J", "URA 4": "9M", "URA 5": "9M", "URA 6": "9M",
-  "GOR 1": "9J", "GOR 2": "9J", "GOR 3": "9M", "GOR 4": "9M", "DEMIN": "9K", "Separador de Óleo/Água": "9K",
-  "Purificador Óleo Comb 1": "9K", "Purificador Óleo Comb 2": "9K", "Purificador Óleo Lub 1": "9K", "Purificador Óleo Lub 2": "9K",
-  "Purificador Redutora 1": "9K", "Purificador Redutora 2": "9K", "Purificador Óleo Lub GER Diesel": "9K",
-  "Maquina do Leme BE 1": "7T", "Maquina do Leme BE 2": "7T", "Maquina do Leme BB 1": "7T", "Maquina do Leme BB 2": "7T",
-  "HPSW 1": "9D", "HPSW 2": "9F", "HPSW 3": "9H", "HPSW 4": "9L", "HPSW 5": "8Q",
-  "Bomba de Serviço 1": "9H", "Bomba de Serviço 2": "9L", "Bomba de Serviço 3": "9L",
-  "MotoBomba 1": "7G", "MotoBomba 2": "7J", "MotoBomba 3": "7N", "MotoBomba 4": "7R",
-  "LPSW 1": "9H", "LPSW 2": "9H", "LPSW 3": "9L", "LPSW 4": "9L", "CAP 1": "9H", "CAP 2": "9L", "CAP 3": "7C",
-  "CMP 1": "9H", "CMP 2": "9L", "CMP de Emergência": "1K", "CBP 1": "9J", "CBP 2": "9J", "CBP 3": "9M", "CBP 4": "9M", "CBP 5": "7P",
-  "Planta Frigorífica 1": "7R", "Planta Frigorífica 2": "7R", "BAG 1": "9F", "BAG 2": "9F", "BAG 3": "9N", "BAG 4": "9N",
-  "BOILER 1": "9F", "BOILER 2": "9F", "BOILER 3": "9N", "BOILER 4": "9N", "Bomba de Água Quente 1": "9F", "Bomba de Água Quente 2": "9N",
-  "Container 1": "4R", "Container 2": "4R", "Container 3": "4R", "Elevador de Aeronaves AV": "1G", "Elevador de Aeronaves AR": "1N",
-  "Guindaste": "1P", "Estabilizador BB": "9J", "Estabilizador BE": "9J", "Proteção Catódica AV": "9C", "Proteção Catódica AR": "9N"
-};
+/**
+ * Localizações dos equipamentos decifradas na memória.
+ * NENHUM compartimento interno permanece em texto claro no bundle.
+ */
+export const EQUIPMENT_LOCATIONS: Record<string, string> = new Proxy({} as Record<string, string>, {
+  get(target, prop, receiver) {
+    const locs = getVaultData()?.equipmentLocations || {};
+    return (locs as any)[prop];
+  },
+  ownKeys() {
+    return Object.keys(getVaultData()?.equipmentLocations || {});
+  },
+  getOwnPropertyDescriptor(target, prop) {
+    const locs = getVaultData()?.equipmentLocations || {};
+    if (typeof prop === 'string' && prop in locs) {
+      return { configurable: true, enumerable: true, value: locs[prop] };
+    }
+    return undefined;
+  },
+  has(target, prop) {
+    const locs = getVaultData()?.equipmentLocations || {};
+    return typeof prop === 'string' && prop in locs;
+  }
+});
 
-export const SHIP_CONFIG = {
-  name: "NAM ATLÂNTICO",
-  hullNumber: "A140",
-  designation: "Navio-Aeródromo Multipropósito",
-  badgeUrl: "" // Removida URL externa do Bing para evitar vazamento de dados de rede
-};
+/**
+ * Identificação do navio decifrada dinamicamente na memória.
+ */
+export const SHIP_CONFIG = new Proxy({
+  name: "CENTRO DE CONTROLE DE MÁQUINAS",
+  hullNumber: "",
+  designation: "",
+  badgeUrl: ""
+}, {
+  get(target, prop, receiver) {
+    const sc = getVaultData()?.shipConfig || target;
+    return Reflect.get(sc, prop, receiver);
+  }
+});
 
 export interface EductorInfo {
   capacity: number;
@@ -119,20 +136,16 @@ export interface SectionEductorData {
   sewageVia?: string;
 }
 
-export const EDUCTOR_SECTIONS: SectionEductorData[] = [
-  { section: 'C', name: 'Seção C (Proa / Auxiliares)', eductors: [], sewageVia: 'Seção D' },
-  { section: 'D', name: 'Seção D (Vante / Convés 9)', eductors: [{ capacity: 15, deck: 9 }] },
-  { section: 'F', name: 'Seção F (Vante / Convés 9)', eductors: [{ capacity: 15, deck: 9 }] },
-  { section: 'G', name: 'Seção G (Centro-Vante)', eductors: [{ capacity: 75, deck: 9, side: 'BB' }, { capacity: 75, deck: 9, side: 'BE' }] },
-  { section: 'H', name: 'Seção H (Praça de Máquinas BE)', eductors: [{ capacity: 75, deck: 9, side: 'BB' }, { capacity: 75, deck: 9, side: 'BE' }] },
-  { section: 'J', name: 'Seção J (Centro / Auxiliares)', eductors: [{ capacity: 75, deck: 9, side: 'BB' }, { capacity: 75, deck: 9, side: 'BE' }] },
-  { section: 'K', name: 'Seção K (Centro / Tratamento)', eductors: [{ capacity: 75, deck: 9, side: 'BB' }, { capacity: 75, deck: 9, side: 'BE' }] },
-  { section: 'L', name: 'Seção L (Praça de Máquinas BB)', eductors: [{ capacity: 75, deck: 9, side: 'BB' }, { capacity: 75, deck: 9, side: 'BE' }] },
-  { section: 'M', name: 'Seção M (Centro-Ré)', eductors: [{ capacity: 75, deck: 9, side: 'BB' }, { capacity: 75, deck: 9, side: 'BE' }] },
-  { section: 'N', name: 'Seção N (Ré / Convés 9)', eductors: [{ capacity: 15, deck: 9 }] },
-  { section: 'P', name: 'Seção P (Ré)', eductors: [], sewageVia: 'Seção N' },
-  { section: 'Q', name: 'Seção Q (Ré / Convés 9)', eductors: [{ capacity: 15, deck: 9 }] },
-  { section: 'R', name: 'Seção R (Ré / Frigorífica)', eductors: [], sewageVia: 'Seção Q' },
-  { section: 'S', name: 'Seção S (Extremo Ré)', eductors: [], sewageVia: 'Não possui equipamento de esgoto fixo' },
-  { section: 'T', name: 'Seção T (Máquina do Leme)', eductors: [{ capacity: 15, deck: 7 }] },
-];
+/**
+ * Seções e edutores de Controle de Avarias (CAV) decifrados na memória.
+ */
+export const EDUCTOR_SECTIONS: SectionEductorData[] = new Proxy([] as SectionEductorData[], {
+  get(target, prop, receiver) {
+    const list = getVaultData()?.eductorSections || [];
+    if (prop === 'length') return list.length;
+    if (prop === Symbol.iterator) return list[Symbol.iterator].bind(list);
+    const val = (list as any)[prop];
+    if (typeof val === 'function') return val.bind(list);
+    return val;
+  }
+});

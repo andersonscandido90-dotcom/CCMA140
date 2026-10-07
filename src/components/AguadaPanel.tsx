@@ -20,30 +20,7 @@ import {
 import { AguadaData, HidrometroEntry, TanqueAguadaEntry, EquipmentData, EquipmentStatus, PersonnelData } from '../types';
 import { SHIP_CONFIG } from '../constants';
 import { formatPrecisionNumber, cleanNumberInput } from './FuelPanel';
-
-function ShipLogo({ className = "w-12 h-12" }: { className?: string }) {
-  const [imgError, setImgError] = useState(false);
-
-  if (imgError || !SHIP_CONFIG.badgeUrl) {
-    return (
-      <div className={`${className} rounded-full border-2 border-black flex items-center justify-center p-1 bg-white shrink-0`}>
-        <svg className="w-8 h-8 text-black fill-current" viewBox="0 0 24 24">
-          <path d="M12 2a2 2 0 0 1 2 2v2.07A6 6 0 0 1 19.93 11H22v2h-2.07A8.002 8.002 0 0 1 13 19.93V22h-2v-2.07A8.002 8.002 0 0 1 4.07 13H2v-2h2.07A6 6 0 0 1 10 6.07V4a2 2 0 0 1 2-2zm0 6a4 4 0 0 0-3.995 3.8L8 12a4 4 0 0 0 8 0 4 4 0 0 0-4-4zm0 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/>
-        </svg>
-      </div>
-    );
-  }
-
-  return (
-    <img 
-      src={SHIP_CONFIG.badgeUrl} 
-      alt="Brasão do Navio" 
-      referrerPolicy="no-referrer"
-      className={`${className} object-contain shrink-0 print:block`} 
-      onError={() => setImgError(true)}
-    />
-  );
-}
+import { PrintShipLogo } from './PrintShipLogo';
 
 // Capacidades e posições fixas oficiais do navio
 export const FIXED_TANKS: TanqueAguadaEntry[] = [
@@ -1027,7 +1004,7 @@ export default function AguadaPanel({
             {/* Cabeçalho Oficial com Logo / Brasão */}
             <div className="border-b-2 border-black pb-3 mb-5 flex justify-between items-center gap-4">
               <div className="flex items-center gap-3">
-                <ShipLogo className="w-14 h-14" />
+                <PrintShipLogo className="w-14 h-14" />
                 <div>
                   <h2 className="font-black text-xs uppercase tracking-widest text-black">MARINHA DO BRASIL</h2>
                   <h3 className="font-bold text-xs uppercase text-black">{shipName} ({SHIP_CONFIG.hullNumber})</h3>
